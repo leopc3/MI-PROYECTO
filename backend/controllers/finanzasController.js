@@ -26,12 +26,26 @@ const obtenerIngresos = async (req, res) => {
 };
 
 const crearIngreso = async (req, res) => {
-    const { empresa_id, monto, moneda, fecha_estimada, observacion } = req.body;
+    const { empresa_id, monto, moneda, fecha_estimada, observacion, es_recurrente_mensual } = req.body;
     try {
         const result = await pool.query(
-            'INSERT INTO ingresos (empresa_id, monto, moneda, fecha_estimada, observacion) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [empresa_id, monto, moneda || 'BOB', fecha_estimada, observacion]
+            'INSERT INTO ingresos (empresa_id, monto, moneda, fecha_estimada, observacion, es_recurrente_mensual) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [empresa_id, monto, moneda || 'BOB', fecha_estimada, observacion, es_recurrente_mensual || false]
         );
+
+        // Si es recurrente, auto-generar los próximos 11 meses (12 en total)
+        if (es_recurrente_mensual) {
+            const fechaBase = new Date(fecha_estimada);
+            for (let i = 1; i <= 11; i++) {
+                const nuevaFecha = new Date(fechaBase);
+                nuevaFecha.setMonth(nuevaFecha.getMonth() + i);
+                await pool.query(
+                    'INSERT INTO ingresos (empresa_id, monto, moneda, fecha_estimada, observacion, es_recurrente_mensual) VALUES ($1, $2, $3, $4, $5, $6)',
+                    [empresa_id, monto, moneda || 'BOB', nuevaFecha.toISOString().split('T')[0], observacion, true]
+                );
+            }
+        }
+
         res.json(result.rows[0]);
     } catch (error) {
         res.status(500).json({ error: error.message });

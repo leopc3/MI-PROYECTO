@@ -131,6 +131,9 @@ const ClienteView = () => {
                         <div>
                             <h1 className="text-3xl font-black tracking-tight">{proyecto.nombre}</h1>
                             <p className="opacity-80 text-sm mt-1 font-medium">Panel de Seguimiento y Actividades</p>
+                            {proyecto.observacion && (
+                                <p className="opacity-60 text-xs mt-2 italic max-w-sm">{proyecto.observacion}</p>
+                            )}
                         </div>
                         <div className="flex items-center gap-2">
                             <button onClick={handleDownloadReport} className="bg-white text-brand px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-md hover:bg-gray-50 active:scale-95 transition-all flex items-center gap-2">

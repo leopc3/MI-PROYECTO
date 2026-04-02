@@ -22,7 +22,8 @@ const AddFinanzaModal = ({ tab, onClose, onSaved }) => {
                 monto: formData.monto,
                 moneda: formData.moneda,
                 fecha_estimada: formData.fecha,
-                observacion: formData.observacion
+                observacion: formData.observacion,
+                es_recurrente_mensual: formData.recurrente
             }
             : {
                 monto: formData.monto,
@@ -88,16 +89,14 @@ const AddFinanzaModal = ({ tab, onClose, onSaved }) => {
                     onChange={e => setFormData({ ...formData, observacion: e.target.value })}
                 />
 
-                {!isIng && (
-                    <label className="flex items-center gap-3 text-sm text-gray-600 cursor-pointer">
-                        <input
-                            type="checkbox"
-                            className="w-4 h-4 rounded accent-brand"
-                            onChange={e => setFormData({ ...formData, recurrente: e.target.checked })}
-                        />
-                        ¿Se repite cada mes? (auto-genera 12 meses)
-                    </label>
-                )}
+                <label className="flex items-center gap-3 text-sm text-gray-600 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        className="w-4 h-4 rounded accent-brand"
+                        onChange={e => setFormData({ ...formData, recurrente: e.target.checked })}
+                    />
+                    ¿Se repite cada mes? (auto-genera 12 meses)
+                </label>
 
                 <div className="flex gap-2 pt-2">
                     <button type="button" onClick={onClose} className="flex-1 py-3 bg-gray-100 rounded-xl font-bold">
