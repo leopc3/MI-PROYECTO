@@ -288,10 +288,17 @@ const Dashboard = () => {
                                     </button>
                                     
                                     <div className={`flex-1 min-w-0 py-1 ${isPagado ? 'line-through text-gray-400' : ''}`}>
-                                        <div className="flex items-center gap-2">
-                                            <p className={`font-bold leading-tight truncate ${isVencida ? 'text-red-600' : 'text-gray-800'}`}>
-                                                {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre}` : `Pago: ${actItem.observacion}`}
-                                            </p>
+                                        <div className="flex flex-col gap-0.5">
+                                            <div className="flex items-center gap-2">
+                                                <p className={`font-bold leading-tight truncate ${isVencida ? 'text-red-600' : 'text-gray-800'}`}>
+                                                    {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre}` : `Pago: ${actItem.observacion}`}
+                                                </p>
+                                            </div>
+                                            {isTarea && actItem.observacion && (
+                                                <p className={`text-[12px] italic leading-snug mt-0.5 line-clamp-2 ${isPagado ? 'text-gray-400 opacity-70' : 'text-gray-500 font-medium'}`}>
+                                                    {actItem.observacion}
+                                                </p>
+                                            )}
                                         </div>
                                         <div className="flex flex-wrap gap-1 mt-1.5 items-center">
                                             {!isTarea && (

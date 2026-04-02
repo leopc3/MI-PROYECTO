@@ -259,6 +259,11 @@ const ClienteView = () => {
                                                         <p className={`font-bold text-gray-800 text-base leading-snug ${tarea.estado === 'cumplida' ? 'line-through text-gray-400' : ''}`}>
                                                             {tarea.titulo}
                                                         </p>
+                                                        {tarea.observacion && (
+                                                            <p className={`text-sm mt-1 transition-all ${tarea.estado === 'cumplida' ? 'text-gray-400 line-through opacity-60' : 'text-gray-500 italic font-medium'}`}>
+                                                                {tarea.observacion}
+                                                            </p>
+                                                        )}
                                                     </div>
                                                     
                                                     <button 
