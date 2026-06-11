@@ -26,19 +26,26 @@ const crearProyecto = async (req, res) => {
 
         // 2. Si es recurrente y está ACTIVO, generar las tareas automáticamente para los próximos 6 meses
         if (es_recurrente && dias_recurrentes && dias_recurrentes.length > 0 && nuevoProyecto.estado === 'activo') {
-            let actual = new Date();
-            let limite = new Date();
-            limite.setMonth(limite.getMonth() + 6); // Límite de 6 meses
+            // ✅ FIX TIMEZONE: usar fecha LOCAL para que getDay() devuelva el día correcto
+            const hoyLocal = new Date();
+            // Fecha local sin hora (evita el desfase UTC)
+            let actual = new Date(hoyLocal.getFullYear(), hoyLocal.getMonth(), hoyLocal.getDate());
+            let limite = new Date(actual);
+            limite.setMonth(limite.getMonth() + 6);
 
             while (actual <= limite) {
-                // getDay() devuelve 0(Dom), 1(Lun)...
-                if (dias_recurrentes.includes(actual.getDay())) {
+                const diaSemana = actual.getDay(); // 0=Dom, 1=Lun... — ahora correcto en hora local
+                if (dias_recurrentes.includes(diaSemana)) {
+                    // Formatear como YYYY-MM-DD en hora local
+                    const y = actual.getFullYear();
+                    const m = String(actual.getMonth() + 1).padStart(2, '0');
+                    const d = String(actual.getDate()).padStart(2, '0');
                     await pool.query(
                         'INSERT INTO tareas (proyecto_id, titulo, fecha_asignada, observacion) VALUES ($1, $2, $3, $4)',
-                        [nuevoProyecto.id, `Tarea Rutinaria: ${nombre}`, actual.toISOString().split('T')[0], observacion]
+                        [nuevoProyecto.id, `Tarea Rutinaria: ${nombre}`, `${y}-${m}-${d}`, observacion]
                     );
                 }
-                actual.setDate(actual.getDate() + 1); // Avanzar un día
+                actual.setDate(actual.getDate() + 1);
             }
         }
 
@@ -79,11 +86,11 @@ const obtenerProyectoPorEnlace = async (req, res) => {
 
 const actualizarProyecto = async (req, res) => {
     const { id } = req.params;
-    const { nombre, observacion, estado, observacion_estado } = req.body;
+    const { nombre, observacion, estado, observacion_estado, dias_recurrentes } = req.body;
     try {
         const result = await pool.query(
-            'UPDATE proyectos SET nombre = $1, observacion = $2, estado = $3, observacion_estado = $4 WHERE id = $5 RETURNING *',
-            [nombre, observacion, estado || 'activo', observacion_estado || null, id]
+            'UPDATE proyectos SET nombre = $1, observacion = $2, estado = $3, observacion_estado = $4, dias_recurrentes = $5 WHERE id = $6 RETURNING *',
+            [nombre, observacion, estado || 'activo', observacion_estado || null, dias_recurrentes || null, id]
         );
         res.json(result.rows[0]);
     } catch (error) { res.status(500).json({ error: error.message }); }

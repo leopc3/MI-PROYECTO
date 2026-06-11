@@ -15,7 +15,7 @@ const Dashboard = () => {
     const [tasks, setTasks] = useState([]);
     const [ingresosData, setIngresosData] = useState([]);
     const [egresosData, setEgresosData] = useState([]);
-    const [kpiData, setKpiData] = useState({ ingresos: 0, egresos: 0, deuda: 0, ingresosPendientes: 0, egresosPendientes: 0 });
+    const [kpiData, setKpiData] = useState({ ingresosBOB: 0, ingresosUSD: 0, egresos: 0, deuda: 0, egresosPendientes: 0, totalEmpresas: 0 });
     const [loading, setLoading] = useState(true);
     const [viendoRetrasados, setViendoRetrasados] = useState(false);
     
@@ -38,22 +38,23 @@ const Dashboard = () => {
             // También ocupo egresos para el balance
             const egRes = await axios.get('http://localhost:5000/api/finanzas/egresos', { headers: { 'Authorization': `Bearer ${token}` } });
 
+            // Empresas
+            const empRes = await axios.get('http://localhost:5000/api/empresas', { headers: { 'Authorization': `Bearer ${token}` } });
+
             setTasks(tarRes.data);
             
             // Calcular KPIs
             const mesActual = new Date().getMonth();
             const añoActual = new Date().getFullYear();
-            
-            const ingMes = finRes.data
-                .filter(i => new Date(i.fecha_estimada).getMonth() === mesActual && new Date(i.fecha_estimada).getFullYear() === añoActual)
+
+            // Por cobrar en BOB (pendientes, cualquier mes)
+            const ingPendBOB = finRes.data
+                .filter(i => i.estado !== 'pagado' && i.moneda !== 'USD')
                 .reduce((acc, curr) => acc + parseFloat(curr.monto), 0);
-                
-            const egMes = egRes.data
-                .filter(e => new Date(e.fecha_pago).getMonth() === mesActual && new Date(e.fecha_pago).getFullYear() === añoActual)
-                .reduce((acc, curr) => acc + parseFloat(curr.monto), 0);
-            
-            const ingPendientesMes = finRes.data
-                .filter(i => new Date(i.fecha_estimada).getMonth() === mesActual && new Date(i.fecha_estimada).getFullYear() === añoActual && i.estado !== 'pagado')
+
+            // Por cobrar en USD (pendientes, cualquier mes)
+            const ingPendUSD = finRes.data
+                .filter(i => i.estado !== 'pagado' && i.moneda === 'USD')
                 .reduce((acc, curr) => acc + parseFloat(curr.monto), 0);
 
             const egPendientesMes = egRes.data
@@ -64,12 +65,13 @@ const Dashboard = () => {
 
             setIngresosData(finRes.data);
             setEgresosData(egRes.data);
-            setKpiData({ 
-                ingresos: ingMes, 
-                egresos: egMes, 
+            setKpiData({
+                ingresosBOB: ingPendBOB,
+                ingresosUSD: ingPendUSD,
+                egresos: egRes.data.filter(e => new Date(e.fecha_pago).getMonth() === mesActual).reduce((a, c) => a + parseFloat(c.monto), 0),
                 deuda: deudaTotal,
-                ingresosPendientes: ingPendientesMes,
-                egresosPendientes: egPendientesMes
+                egresosPendientes: egPendientesMes,
+                totalEmpresas: empRes.data.length,
             });
         } catch (error) { console.error('Error cargando el dashboard:', error); }
         setLoading(false);
@@ -106,7 +108,10 @@ const Dashboard = () => {
     };
 
     // Cálculos derivados
-    const selectDateStr = selectedDate.toISOString().split('T')[0];
+    // ✅ FIX TIMEZONE: hoyStr en hora LOCAL para evitar que a las 9pm cambie de día
+    const hoy = new Date();
+    const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+    const selectDateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth()+1).padStart(2,'0')}-${String(selectedDate.getDate()).padStart(2,'0')}`;
     const tareasDelDia = tasks.filter(t => t.fecha_asignada?.split('T')[0] === selectDateStr);
     const ingresosDelDia = ingresosData.filter(i => i.fecha_estimada?.split('T')[0] === selectDateStr);
     const egresosDelDia = egresosData.filter(e => e.fecha_pago?.split('T')[0] === selectDateStr);
@@ -116,8 +121,15 @@ const Dashboard = () => {
         ...ingresosDelDia.map(i => ({ ...i, tipoItem: 'ingreso' })),
         ...egresosDelDia.map(e => ({ ...e, tipoItem: 'egreso' }))
     ];
+
+    // Helper: cuántos días de retraso tiene un item
+    const diasRetraso = (fechaStr) => {
+        const fecha = new Date(fechaStr.split('T')[0] + 'T00:00:00');
+        const hoyD = new Date(hoyStr + 'T00:00:00');
+        return Math.floor((hoyD - fecha) / (1000 * 60 * 60 * 24));
+    };
     
-    const hoyStr = new Date().toISOString().split('T')[0];
+    const hoyStr2 = hoyStr; // alias para uso en lambdas
     const tareasVencidas = tasks.filter(t => t.fecha_asignada?.split('T')[0] < hoyStr);
     const ingresosVencidos = ingresosData.filter(i => (i.fecha_estimada?.split('T')[0] < hoyStr) && i.estado !== 'pagado');
     const egresosVencidos = egresosData.filter(e => (e.fecha_pago?.split('T')[0] < hoyStr) && e.estado !== 'pagado');
@@ -147,7 +159,8 @@ const Dashboard = () => {
         return map;
     }, [tasks]);
 
-    const balance = kpiData.ingresos - kpiData.egresos;
+
+
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto bg-gray-50 min-h-screen">
@@ -199,15 +212,15 @@ const Dashboard = () => {
             {/* KPIs Cards */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
                 <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
-                    <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Balance Mes</p>
-                    <p className={`text-xl font-black mt-1 ${balance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                        Bs. {balance.toFixed(0)}
+                    <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Por Cobrar</p>
+                    <p className="text-xl font-black mt-1 text-green-500">
+                        Bs. {kpiData.ingresosBOB.toFixed(0)}
                     </p>
                 </div>
                 <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
                     <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Por Cobrar</p>
-                    <p className="text-xl font-black mt-1 text-green-500">
-                        Bs. {kpiData.ingresosPendientes.toFixed(0)}
+                    <p className="text-xl font-black mt-1 text-emerald-600">
+                        $ {kpiData.ingresosUSD.toFixed(0)}
                     </p>
                 </div>
                 <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
@@ -217,8 +230,8 @@ const Dashboard = () => {
                     </p>
                 </div>
                 <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
-                    <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Tareas Pend.</p>
-                    <p className="text-xl font-black mt-1 text-gray-800">{tasks.length}</p>
+                    <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Empresas</p>
+                    <p className="text-xl font-black mt-1 text-gray-800">{kpiData.totalEmpresas}</p>
                 </div>
                 <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
                     <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Deuda Activa</p>
@@ -299,6 +312,15 @@ const Dashboard = () => {
                                                     {actItem.observacion}
                                                 </p>
                                             )}
+                                            {/* Badge días de retraso */}
+                                            {isVencida && (() => {
+                                                const dias = diasRetraso(isTarea ? actItem.fecha_asignada : (isIngreso ? actItem.fecha_estimada : actItem.fecha_pago));
+                                                return dias > 0 ? (
+                                                    <span className="inline-flex items-center gap-1 text-[10px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded-md mt-1 w-fit">
+                                                        ⏰ {dias} día{dias !== 1 ? 's' : ''} de retraso
+                                                    </span>
+                                                ) : null;
+                                            })()}
                                         </div>
                                         <div className="flex flex-wrap gap-1 mt-1.5 items-center">
                                             {!isTarea && (
