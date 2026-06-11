@@ -47,14 +47,22 @@ const Dashboard = () => {
             const mesActual = new Date().getMonth();
             const añoActual = new Date().getFullYear();
 
-            // Por cobrar en BOB (pendientes, cualquier mes)
+            // Por cobrar en BOB — solo mes actual, pendientes
             const ingPendBOB = finRes.data
-                .filter(i => i.estado !== 'pagado' && i.moneda !== 'USD')
+                .filter(i => {
+                    const f = new Date(i.fecha_estimada);
+                    return i.estado !== 'pagado' && i.moneda !== 'USD'
+                        && f.getMonth() === mesActual && f.getFullYear() === añoActual;
+                })
                 .reduce((acc, curr) => acc + parseFloat(curr.monto), 0);
 
-            // Por cobrar en USD (pendientes, cualquier mes)
+            // Por cobrar en USD — solo mes actual, pendientes
             const ingPendUSD = finRes.data
-                .filter(i => i.estado !== 'pagado' && i.moneda === 'USD')
+                .filter(i => {
+                    const f = new Date(i.fecha_estimada);
+                    return i.estado !== 'pagado' && i.moneda === 'USD'
+                        && f.getMonth() === mesActual && f.getFullYear() === añoActual;
+                })
                 .reduce((acc, curr) => acc + parseFloat(curr.monto), 0);
 
             const egPendientesMes = egRes.data
