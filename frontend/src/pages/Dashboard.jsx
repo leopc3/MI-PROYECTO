@@ -150,6 +150,29 @@ const Dashboard = () => {
         ...egresosVencidos.map(e => ({ ...e, tipoItem: 'egreso' }))
     ] : actividadesDelDia;
 
+    // Agrupar retrasadas por proyecto (solo cuando viendoRetrasados)
+    const retrasadasPorProyecto = (() => {
+        if (!viendoRetrasados) return {};
+        const grupos = {};
+        tareasVencidas.forEach(t => {
+            const key = t.proyecto_id ? `proy_${t.proyecto_id}` : '__propias__';
+            const label = t.proyecto_nombre
+                ? `${t.empresa_nombre ? t.empresa_nombre + ': ' : ''}${t.proyecto_nombre}`
+                : 'Propias / Sin Proyecto';
+            if (!grupos[key]) grupos[key] = { label, items: [] };
+            grupos[key].items.push({ ...t, tipoItem: 'tarea' });
+        });
+        // Cobros y pagos van en grupo financiero
+        const finItems = [
+            ...ingresosVencidos.map(i => ({ ...i, tipoItem: 'ingreso' })),
+            ...egresosVencidos.map(e => ({ ...e, tipoItem: 'egreso' }))
+        ];
+        if (finItems.length > 0) {
+            grupos['__finanzas__'] = { label: 'Cobros y Pagos Vencidos', items: finItems };
+        }
+        return grupos;
+    })();
+
     const handleToggleFinanza = async (id, tipo) => {
         try {
             await axios.patch(`http://localhost:5000/api/finanzas/${tipo}s/${id}/estado`);
@@ -288,7 +311,100 @@ const Dashboard = () => {
                 </div>
                 {loading ? (
                     <div className="text-center py-10 text-gray-400 font-medium">Actualizando...</div>
+                ) : viendoRetrasados ? (
+                    // ── VISTA AGRUPADA POR PROYECTO ──
+                    Object.keys(retrasadasPorProyecto).length === 0 ? (
+                        <div className="bg-white rounded-3xl p-8 border border-gray-100 flex flex-col items-center shadow-sm text-center">
+                            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-green-50 text-green-400"><CheckCircle2 size={24} /></div>
+                            <p className="font-bold text-gray-500 text-sm">¡Todo al día!</p>
+                            <p className="text-xs text-gray-400 mt-1">No tienes ninguna obligación retrasada.</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            {Object.entries(retrasadasPorProyecto).map(([key, grupo]) => (
+                                <div key={key}>
+                                    {/* Cabecera del grupo */}
+                                    <div className={`flex items-center gap-2 mb-3 px-1`}>
+                                        <div className={`w-2 h-2 rounded-full shrink-0 ${
+                                            key === '__finanzas__' ? 'bg-green-500' :
+                                            key === '__propias__' ? 'bg-gray-400' : 'bg-brand'
+                                        }`} />
+                                        <p className={`text-xs font-black uppercase tracking-widest truncate ${
+                                            key === '__finanzas__' ? 'text-green-600' :
+                                            key === '__propias__' ? 'text-gray-500' : 'text-brand'
+                                        }`}>
+                                            {grupo.label}
+                                        </p>
+                                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                                            key === '__finanzas__' ? 'bg-green-100 text-green-600' :
+                                            key === '__propias__' ? 'bg-gray-100 text-gray-500' : 'bg-orange-100 text-brand'
+                                        }`}>
+                                            {grupo.items.length}
+                                        </span>
+                                    </div>
+
+                                    {/* Tarjetas del grupo */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        {grupo.items.map(actItem => {
+                                            const isTarea = actItem.tipoItem === 'tarea';
+                                            const isIngreso = actItem.tipoItem === 'ingreso';
+                                            const isPagado = actItem.estado === 'pagado';
+                                            const fechaRef = isTarea ? actItem.fecha_asignada : (isIngreso ? actItem.fecha_estimada : actItem.fecha_pago);
+                                            const isVencida = fechaRef?.split('T')[0] < hoyStr && !isPagado;
+                                            const dias = diasRetraso(fechaRef);
+
+                                            return (
+                                                <div key={`${actItem.tipoItem}-${actItem.id}`} className={`bg-white p-4 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden flex gap-4 items-center transition-all ${isPagado ? 'opacity-60 bg-gray-50' : ''}`}>
+                                                    {isVencida && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500" />}
+
+                                                    <button
+                                                        onClick={() => isTarea ? handleCumplir(actItem.id) : handleToggleFinanza(actItem.id, actItem.tipoItem)}
+                                                        className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${isPagado ? 'bg-gray-200 text-gray-500' : isTarea ? 'border-2 border-gray-200 text-gray-300 hover:border-brand hover:text-brand' : isIngreso ? 'bg-green-50 text-green-500 hover:bg-green-100' : 'bg-red-50 text-red-500 hover:bg-red-100'}`}
+                                                    >
+                                                        {isPagado ? <CheckCircle2 size={24} /> : isTarea ? <CheckCircle2 size={24} /> : isIngreso ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
+                                                    </button>
+
+                                                    <div className={`flex-1 min-w-0 py-1 ${isPagado ? 'line-through text-gray-400' : ''}`}>
+                                                        <p className={`font-bold leading-tight truncate text-sm ${isVencida ? 'text-red-600' : 'text-gray-800'}`}>
+                                                            {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre}` : `Pago: ${actItem.observacion}`}
+                                                        </p>
+                                                        {isTarea && actItem.observacion && (
+                                                            <p className="text-[11px] italic text-gray-400 mt-0.5 line-clamp-1">{actItem.observacion}</p>
+                                                        )}
+                                                        <div className="flex flex-wrap gap-1 mt-1 items-center">
+                                                            {dias > 0 && isVencida && (
+                                                                <span className="text-[10px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded-md">
+                                                                    ⏰ {dias} día{dias !== 1 ? 's' : ''} de retraso
+                                                                </span>
+                                                            )}
+                                                            {!isTarea && (
+                                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${isIngreso ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                                    {actItem.moneda === 'USD' ? '$' : 'Bs.'} {actItem.monto}
+                                                                </span>
+                                                            )}
+                                                            {/* Fecha */}
+                                                            <span className="text-[10px] text-gray-300 font-bold">
+                                                                {new Date(fechaRef).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    {isTarea && (
+                                                        <div className="flex flex-col gap-1 shrink-0">
+                                                            <button onClick={() => setEditTask(actItem)} className="p-2 bg-gray-50 rounded-xl text-gray-400 active:bg-gray-200 transition-colors"><PenSquare size={16} /></button>
+                                                            <button onClick={() => handleEliminar(actItem.id)} className="p-2 bg-red-50 rounded-xl text-red-500 active:bg-red-200 transition-colors"><Trash2 size={16} /></button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )
                 ) : listaAMostrar.length > 0 ? (
+                    // ── VISTA NORMAL DEL DÍA ──
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {listaAMostrar.map(actItem => {
                             const isTarea = actItem.tipoItem === 'tarea';
@@ -299,15 +415,13 @@ const Dashboard = () => {
 
                             return (
                                 <div key={`${actItem.tipoItem}-${actItem.id}`} className={`bg-white p-4 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden flex gap-4 items-center transition-all ${isPagado ? 'opacity-60 bg-gray-50' : ''}`}>
-                                    {isVencida && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500"></div>}
-                                    
-                                    <button 
+                                    {isVencida && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500" />}
+                                    <button
                                         onClick={() => isTarea ? handleCumplir(actItem.id) : handleToggleFinanza(actItem.id, actItem.tipoItem)}
                                         className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${isPagado ? 'bg-gray-200 text-gray-500' : isTarea ? 'border-2 border-gray-200 text-gray-300 hover:border-brand hover:text-brand' : isIngreso ? 'bg-green-50 text-green-500 hover:bg-green-100' : 'bg-red-50 text-red-500 hover:bg-red-100'}`}
                                     >
                                         {isPagado ? <CheckCircle2 size={24} /> : isTarea ? <CheckCircle2 size={24} /> : isIngreso ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
                                     </button>
-                                    
                                     <div className={`flex-1 min-w-0 py-1 ${isPagado ? 'line-through text-gray-400' : ''}`}>
                                         <div className="flex flex-col gap-0.5">
                                             <div className="flex items-center gap-2">
@@ -343,16 +457,10 @@ const Dashboard = () => {
                                             )}
                                         </div>
                                     </div>
-                                    
-                                    {/* Botones de acción Tarea (Solo tareas se editan por ahora en Dashboard) */}
                                     {isTarea && (
                                         <div className="flex flex-col gap-1 shrink-0">
-                                            <button onClick={() => setEditTask(actItem)} className="p-2 bg-gray-50 rounded-xl text-gray-400 active:bg-gray-200 transition-colors">
-                                                <PenSquare size={16} />
-                                            </button>
-                                            <button onClick={() => handleEliminar(actItem.id)} className="p-2 bg-red-50 rounded-xl text-red-500 active:bg-red-200 transition-colors">
-                                                <Trash2 size={16} />
-                                            </button>
+                                            <button onClick={() => setEditTask(actItem)} className="p-2 bg-gray-50 rounded-xl text-gray-400 active:bg-gray-200 transition-colors"><PenSquare size={16} /></button>
+                                            <button onClick={() => handleEliminar(actItem.id)} className="p-2 bg-red-50 rounded-xl text-red-500 active:bg-red-200 transition-colors"><Trash2 size={16} /></button>
                                         </div>
                                     )}
                                 </div>
@@ -365,10 +473,10 @@ const Dashboard = () => {
                             {viendoRetrasados ? <CheckCircle2 size={24} /> : <CalIcon size={24} />}
                         </div>
                         <p className="font-bold text-gray-500 text-sm">
-                            {viendoRetrasados ? "¡Todo al día!" : "El día está libre"}
+                            {viendoRetrasados ? '¡Todo al día!' : 'El día está libre'}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
-                            {viendoRetrasados ? "No tienes ninguna obligación retrasada." : "Disfruta tu descanso o añade nuevas actividades."}
+                            {viendoRetrasados ? 'No tienes ninguna obligación retrasada.' : 'Disfruta tu descanso o añade nuevas actividades.'}
                         </p>
                     </div>
                 )}
