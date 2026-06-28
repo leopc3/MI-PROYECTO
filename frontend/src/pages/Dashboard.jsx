@@ -89,12 +89,10 @@ const Dashboard = () => {
     useEffect(() => { setViendoRetrasados(false); }, [selectedDate]);
 
     const handleCumplir = async (id) => {
-        // Actualización optimista: toggle local inmediato
-        setTasks(prev => prev.map(t =>
-            t.id === id
-                ? { ...t, estado: t.estado === 'cumplida' ? 'pendiente' : 'cumplida' }
-                : t
-        ));
+        // Guardar snapshot para rollback
+        const snapshot = tasks.find(t => t.id === id);
+        // Actualización optimista: quitar de la lista (el backend solo devuelve pendientes)
+        setTasks(prev => prev.filter(t => t.id !== id));
         const token = localStorage.getItem('token');
         try {
             await axios.patch(`http://localhost:5000/api/tareas/${id}/estado`, {}, {
@@ -102,14 +100,11 @@ const Dashboard = () => {
             });
         } catch (error) {
             console.error(error);
-            // Revertir si falla
-            setTasks(prev => prev.map(t =>
-                t.id === id
-                    ? { ...t, estado: t.estado === 'cumplida' ? 'pendiente' : 'cumplida' }
-                    : t
-            ));
+            // Revertir: devolver la tarea a la lista si falla
+            if (snapshot) setTasks(prev => [...prev, snapshot].sort((a, b) => new Date(a.fecha_asignada) - new Date(b.fecha_asignada)));
         }
     };
+
 
     const handleEliminar = async (id) => {
         if (!window.confirm("¿Seguro que deseas eliminar esta tarea?")) return;
