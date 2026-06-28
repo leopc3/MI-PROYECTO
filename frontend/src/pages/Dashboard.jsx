@@ -89,24 +89,41 @@ const Dashboard = () => {
     useEffect(() => { setViendoRetrasados(false); }, [selectedDate]);
 
     const handleCumplir = async (id) => {
+        // Actualización optimista: toggle local inmediato
+        setTasks(prev => prev.map(t =>
+            t.id === id
+                ? { ...t, estado: t.estado === 'cumplida' ? 'pendiente' : 'cumplida' }
+                : t
+        ));
         const token = localStorage.getItem('token');
         try {
             await axios.patch(`http://localhost:5000/api/tareas/${id}/estado`, {}, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            fetchData();
-        } catch (error) { console.error(error); }
+        } catch (error) {
+            console.error(error);
+            // Revertir si falla
+            setTasks(prev => prev.map(t =>
+                t.id === id
+                    ? { ...t, estado: t.estado === 'cumplida' ? 'pendiente' : 'cumplida' }
+                    : t
+            ));
+        }
     };
 
     const handleEliminar = async (id) => {
         if (!window.confirm("¿Seguro que deseas eliminar esta tarea?")) return;
+        // Actualización optimista: quitar de la lista inmediatamente
+        setTasks(prev => prev.filter(t => t.id !== id));
         const token = localStorage.getItem('token');
         try {
             await axios.delete(`http://localhost:5000/api/tareas/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            fetchData();
-        } catch (error) { console.error(error); }
+        } catch (error) {
+            console.error(error);
+            fetchData(); // Revertir recargando si falla
+        }
     };
 
     const handleLogout = () => {
@@ -174,10 +191,27 @@ const Dashboard = () => {
     })();
 
     const handleToggleFinanza = async (id, tipo) => {
+        // Actualización optimista: toggle local inmediato
+        const toggle = (item) => ({
+            ...item,
+            estado: item.estado === 'pagado' ? 'pendiente' : 'pagado'
+        });
+        if (tipo === 'ingreso') {
+            setIngresosData(prev => prev.map(i => i.id === id ? toggle(i) : i));
+        } else {
+            setEgresosData(prev => prev.map(e => e.id === id ? toggle(e) : e));
+        }
         try {
             await axios.patch(`http://localhost:5000/api/finanzas/${tipo}s/${id}/estado`);
-            fetchData();
-        } catch (error) { console.error(error); }
+        } catch (error) {
+            console.error(error);
+            // Revertir si falla
+            if (tipo === 'ingreso') {
+                setIngresosData(prev => prev.map(i => i.id === id ? toggle(i) : i));
+            } else {
+                setEgresosData(prev => prev.map(e => e.id === id ? toggle(e) : e));
+            }
+        }
     };
 
     // Mapeo para los puntitos del calendario mensual
