@@ -96,4 +96,57 @@ const actualizarProyecto = async (req, res) => {
     } catch (error) { res.status(500).json({ error: error.message }); }
 };
 
-module.exports = { obtenerProyectos, crearProyecto, eliminarProyecto, obtenerProyectoPorEnlace, actualizarProyecto };
+const regenerarTareas = async (req, res) => {
+    const { id } = req.params;
+    try {
+        // 1. Traer el proyecto para obtener sus dias_recurrentes y nombre
+        const proyRes = await pool.query('SELECT * FROM proyectos WHERE id = $1', [id]);
+        if (proyRes.rows.length === 0) return res.status(404).json({ error: 'Proyecto no encontrado' });
+        const proyecto = proyRes.rows[0];
+
+        if (!proyecto.es_recurrente || !proyecto.dias_recurrentes || proyecto.dias_recurrentes.length === 0) {
+            return res.status(400).json({ error: 'El proyecto no tiene días de recurrencia configurados' });
+        }
+
+        // 2. Eliminar SOLO tareas futuras pendientes (desde hoy en adelante)
+        const hoyLocal = new Date();
+        const y = hoyLocal.getFullYear();
+        const m = String(hoyLocal.getMonth() + 1).padStart(2, '0');
+        const d = String(hoyLocal.getDate()).padStart(2, '0');
+        const hoyStr = `${y}-${m}-${d}`;
+
+        const deleted = await pool.query(
+            "DELETE FROM tareas WHERE proyecto_id = $1 AND estado = 'pendiente' AND fecha_asignada >= $2 RETURNING id",
+            [id, hoyStr]
+        );
+
+        // 3. Generar nuevas tareas desde hoy hasta 6 meses
+        let actual = new Date(hoyLocal.getFullYear(), hoyLocal.getMonth(), hoyLocal.getDate());
+        let limite = new Date(actual);
+        limite.setMonth(limite.getMonth() + 6);
+
+        let creadas = 0;
+        while (actual <= limite) {
+            const diaSemana = actual.getDay();
+            if (proyecto.dias_recurrentes.includes(diaSemana)) {
+                const fy = actual.getFullYear();
+                const fm = String(actual.getMonth() + 1).padStart(2, '0');
+                const fd = String(actual.getDate()).padStart(2, '0');
+                await pool.query(
+                    'INSERT INTO tareas (proyecto_id, titulo, fecha_asignada, observacion) VALUES ($1, $2, $3, $4)',
+                    [id, `Tarea Rutinaria: ${proyecto.nombre}`, `${fy}-${fm}-${fd}`, proyecto.observacion]
+                );
+                creadas++;
+            }
+            actual.setDate(actual.getDate() + 1);
+        }
+
+        res.json({
+            message: `Tareas regeneradas correctamente`,
+            eliminadas: deleted.rowCount,
+            creadas
+        });
+    } catch (error) { res.status(500).json({ error: error.message }); }
+};
+
+module.exports = { obtenerProyectos, crearProyecto, eliminarProyecto, obtenerProyectoPorEnlace, actualizarProyecto, regenerarTareas };

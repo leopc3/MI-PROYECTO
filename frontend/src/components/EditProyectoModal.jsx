@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import axios from 'axios';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, RotateCcw } from 'lucide-react';
 
 const DIAS_SEMANA = [
     { label: 'Dom', value: 0 },
@@ -21,11 +21,14 @@ const EditProyectoModal = ({ proyecto, onClose, onSaved }) => {
         Array.isArray(proyecto.dias_recurrentes) ? proyecto.dias_recurrentes : []
     );
     const [saving, setSaving] = useState(false);
+    const [regenerando, setRegenerando] = useState(false);
+    const [regeneradoMsg, setRegeneradoMsg] = useState(null);
 
     const toggleDia = (dia) => {
         setDiasRecurrentes(prev =>
             prev.includes(dia) ? prev.filter(d => d !== dia) : [...prev, dia]
         );
+        setRegeneradoMsg(null); // limpiar mensaje al cambiar días
     };
 
     const handleSubmit = async (e) => {
@@ -50,6 +53,41 @@ const EditProyectoModal = ({ proyecto, onClose, onSaved }) => {
             console.error('Error al actualizar proyecto:', error);
         }
         setSaving(false);
+    };
+
+    const handleRegenerar = async () => {
+        if (diasRecurrentes.length === 0) {
+            alert('Selecciona al menos un día antes de regenerar.');
+            return;
+        }
+        const diasNombres = diasRecurrentes
+            .sort((a,b) => a - b)
+            .map(d => DIAS_SEMANA.find(s => s.value === d)?.label)
+            .join(', ');
+        if (!window.confirm(`¿Regeneración de tareas futuras?\n\nEsto eliminará todas las tareas PENDIENTES desde hoy y creará nuevas para:\n${diasNombres}\n\nLas tareas ya cumplidas NO se tocarán.`)) return;
+
+        setRegenerando(true);
+        setRegeneradoMsg(null);
+        const token = localStorage.getItem('token');
+        try {
+            // 1. Guardar primero los días actualizados
+            await axios.put(
+                `http://localhost:5000/api/proyectos/actualizar/${proyecto.id}`,
+                { nombre, observacion, estado, observacion_estado: observacionEstado, dias_recurrentes: diasRecurrentes },
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+            // 2. Regenerar tareas
+            const res = await axios.post(
+                `http://localhost:5000/api/proyectos/${proyecto.id}/regenerar-tareas`,
+                {},
+                { headers: { 'Authorization': `Bearer ${token}` } }
+            );
+            setRegeneradoMsg(`✅ ${res.data.creadas} tareas creadas, ${res.data.eliminadas} anteriores eliminadas`);
+        } catch (error) {
+            console.error(error);
+            setRegeneradoMsg('❌ Error al regenerar. Intenta de nuevo.');
+        }
+        setRegenerando(false);
     };
 
     return (
@@ -83,7 +121,7 @@ const EditProyectoModal = ({ proyecto, onClose, onSaved }) => {
                             <label className="flex items-center gap-2 text-xs font-black text-blue-600 uppercase tracking-widest mb-3">
                                 <RefreshCw size={13} /> Días de recurrencia
                             </label>
-                            <div className="flex justify-between gap-1">
+                        <div className="flex justify-between gap-1">
                                 {DIAS_SEMANA.map(dia => (
                                     <button
                                         key={dia.value}
@@ -99,8 +137,27 @@ const EditProyectoModal = ({ proyecto, onClose, onSaved }) => {
                                     </button>
                                 ))}
                             </div>
+
+                            {/* Botón regenerar */}
+                            <button
+                                type="button"
+                                onClick={handleRegenerar}
+                                disabled={regenerando || diasRecurrentes.length === 0}
+                                className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-black hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                            >
+                                <RotateCcw size={14} className={regenerando ? 'animate-spin' : ''} />
+                                {regenerando ? 'Regenerando...' : 'Regenerar Tareas Futuras'}
+                            </button>
+
+                            {/* Feedback */}
+                            {regeneradoMsg && (
+                                <p className={`text-[11px] font-bold mt-2 px-1 ${
+                                    regeneradoMsg.startsWith('✅') ? 'text-green-600' : 'text-red-500'
+                                }`}>{regeneradoMsg}</p>
+                            )}
+
                             <p className="text-[10px] text-blue-400 mt-2 font-medium">
-                                ⚠️ Cambiar días no regenera tareas pasadas, solo actualiza la configuración.
+                                ⚠️ "Regenerar" borra las tareas pendientes futuras y crea las nuevas. Las cumplidas no se tocan.
                             </p>
                         </div>
                     )}
