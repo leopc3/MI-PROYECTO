@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { Calendar, CheckCircle2, Plus, Filter, AlertTriangle, Download, Pencil, Eye, EyeOff } from 'lucide-react';
+import { Calendar, CheckCircle2, Plus, Filter, AlertTriangle, Download, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -64,6 +64,18 @@ const ClienteView = () => {
         }
         await axios.patch(`http://localhost:5000/api/tareas/${id}/estado`);
         loadData();
+    };
+
+    const handleEliminarTarea = async (id) => {
+        if (!window.confirm('¿Eliminar esta petición? Esta acción no se puede deshacer.')) return;
+        try {
+            await axios.delete(`http://localhost:5000/api/tareas/${id}`);
+            // Optimista: quitar de la lista sin recargar
+            setTareas(prev => prev.filter(t => t.id !== id));
+        } catch (err) {
+            console.error(err);
+            alert('No se pudo eliminar la tarea. Intenta de nuevo.');
+        }
     };
 
     if (!proyecto) return <div className="p-10 text-center font-bold text-gray-400">Cargando proyecto...</div>;
@@ -291,20 +303,29 @@ const ClienteView = () => {
                                                     </div>
 
                                                     <div className="flex items-center gap-1 shrink-0">
-                                                        {/* Botón editar — solo tareas del cliente y proyecto activo */}
+                                                        {/* Botones editar y eliminar — solo tareas del cliente y proyecto activo */}
                                                         {esDCliente && proyecto.estado === 'activo' && tarea.estado !== 'cumplida' && (
-                                                            <button
-                                                                onClick={() => setEditando({
-                                                                    id: tarea.id,
-                                                                    titulo: tarea.titulo,
-                                                                    observacion: tarea.observacion || '',
-                                                                    fecha_asignada: tarea.fecha_asignada?.split('T')[0]
-                                                                })}
-                                                                className="p-1.5 rounded-full text-gray-300 hover:text-brand hover:bg-orange-50 transition-all"
-                                                                title="Editar petición"
-                                                            >
-                                                                <Pencil size={18} />
-                                                            </button>
+                                                            <>
+                                                                <button
+                                                                    onClick={() => setEditando({
+                                                                        id: tarea.id,
+                                                                        titulo: tarea.titulo,
+                                                                        observacion: tarea.observacion || '',
+                                                                        fecha_asignada: tarea.fecha_asignada?.split('T')[0]
+                                                                    })}
+                                                                    className="p-1.5 rounded-full text-gray-300 hover:text-brand hover:bg-orange-50 transition-all"
+                                                                    title="Editar petición"
+                                                                >
+                                                                    <Pencil size={18} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleEliminarTarea(tarea.id)}
+                                                                    className="p-1.5 rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                                                                    title="Eliminar petición"
+                                                                >
+                                                                    <Trash2 size={18} />
+                                                                </button>
+                                                            </>
                                                         )}
 
                                                         <button
