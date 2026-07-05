@@ -2,8 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { TrendingUp, TrendingDown, X } from 'lucide-react';
 
-const QuickFinanzaModal = ({ tipo, onClose, onSaved }) => {
-    // tipo: 'ingreso' | 'egreso'
+const QuickFinanzaModal = ({ tipo, selectedDate, onClose, onSaved }) => {
     const isIngreso = tipo === 'ingreso';
 
     const [concepto, setConcepto] = useState('');
@@ -12,8 +11,10 @@ const QuickFinanzaModal = ({ tipo, onClose, onSaved }) => {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
 
-    const hoy = new Date();
-    const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
+    // Usar la fecha seleccionada en el calendario (igual que Añadir Tarea)
+    const fecha = selectedDate || new Date();
+    const fechaStr = `${fecha.getFullYear()}-${String(fecha.getMonth()+1).padStart(2,'0')}-${String(fecha.getDate()).padStart(2,'0')}`;
+    const fechaLabel = fecha.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -30,7 +31,7 @@ const QuickFinanzaModal = ({ tipo, onClose, onSaved }) => {
                     empresa_nombre: concepto.trim(),
                     monto: parseFloat(monto),
                     moneda,
-                    fecha_estimada: fechaHoy,
+                    fecha_estimada: fechaStr,
                     estado: 'pendiente',
                     descripcion: 'Cobro rápido',
                 }, { headers: { Authorization: `Bearer ${token}` } });
@@ -39,7 +40,7 @@ const QuickFinanzaModal = ({ tipo, onClose, onSaved }) => {
                     observacion: concepto.trim(),
                     monto: parseFloat(monto),
                     moneda,
-                    fecha_pago: fechaHoy,
+                    fecha_pago: fechaStr,
                     estado: 'pendiente',
                 }, { headers: { Authorization: `Bearer ${token}` } });
             }
@@ -66,7 +67,7 @@ const QuickFinanzaModal = ({ tipo, onClose, onSaved }) => {
                                 <p className={`font-black text-base ${isIngreso ? 'text-green-700' : 'text-red-700'}`}>
                                     {isIngreso ? 'Cobro Rápido' : 'Pago Rápido'}
                                 </p>
-                                <p className="text-[11px] text-gray-400 font-medium">Para hoy — {hoy.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</p>
+                                <p className="text-[11px] text-gray-400 font-medium capitalize">{fechaLabel}</p>
                             </div>
                         </div>
                         <button onClick={onClose} className="p-2 rounded-full text-gray-400 hover:bg-gray-100 transition-all">

@@ -300,8 +300,8 @@ const Dashboard = () => {
                 </div>
             )}
 
-            {/* KPIs Cards — 5 tarjetas: 3 datos + 2 acciones rápidas */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+            {/* KPIs Cards — 3 datos + 3 acciones rápidas */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
                 <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
                     <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Por Cobrar</p>
                     <p className="text-xl font-black mt-1 text-green-500">
@@ -338,7 +338,16 @@ const Dashboard = () => {
                     <span className="text-sm font-black text-red-500 text-center leading-tight">Pago Rápido</span>
                     <span className="text-[10px] text-red-300 font-bold mt-0.5">+ Registrar</span>
                 </div>
+                {/* Añadir Tarea */}
+                <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-center items-center bg-gradient-to-br from-brand/10 to-brand/5 cursor-pointer hover:shadow-md transition-all active:scale-95" onClick={() => setShowTaskModal(true)}>
+                    <div className="flex flex-col items-center gap-1 font-black text-brand">
+                        <span className="text-sm">Añadir Tarea</span>
+                        <div className="bg-white rounded-full p-1 shadow-sm"><ChevronRight size={16} /></div>
+                    </div>
+                </div>
             </div>
+
+
 
             {/* Calendario con Toggle M/W */}
             <div className="mb-6">
@@ -575,6 +584,7 @@ const Dashboard = () => {
             {showCobroModal && (
                 <QuickFinanzaModal
                     tipo="ingreso"
+                    selectedDate={selectedDate}
                     onClose={() => setShowCobroModal(false)}
                     onSaved={() => { setShowCobroModal(false); fetchData(); }}
                 />
@@ -582,9 +592,11 @@ const Dashboard = () => {
             {showPagoModal && (
                 <QuickFinanzaModal
                     tipo="egreso"
+                    selectedDate={selectedDate}
                     onClose={() => setShowPagoModal(false)}
                     onSaved={() => { setShowPagoModal(false); fetchData(); }}
                 />
+            )}
             )}
         </div>
     );
