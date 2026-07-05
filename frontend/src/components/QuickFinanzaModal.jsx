@@ -27,7 +27,7 @@ const QuickFinanzaModal = ({ tipo, selectedDate, onClose, onSaved }) => {
         try {
             const token = localStorage.getItem('token');
             if (isIngreso) {
-                await axios.post('http://localhost:5000/api/finanzas/ingresos', {
+                const res = await axios.post('http://localhost:5000/api/finanzas/ingresos', {
                     empresa_nombre: concepto.trim(),
                     monto: parseFloat(monto),
                     moneda,
@@ -35,16 +35,33 @@ const QuickFinanzaModal = ({ tipo, selectedDate, onClose, onSaved }) => {
                     estado: 'pendiente',
                     descripcion: 'Cobro rápido',
                 }, { headers: { Authorization: `Bearer ${token}` } });
+                onSaved({
+                    ...res.data,
+                    empresa_nombre: concepto.trim(),
+                    monto: parseFloat(monto),
+                    moneda,
+                    fecha_estimada: fechaStr,
+                    estado: 'pendiente',
+                    tipoItem: 'ingreso',
+                });
             } else {
-                await axios.post('http://localhost:5000/api/finanzas/egresos', {
+                const res = await axios.post('http://localhost:5000/api/finanzas/egresos', {
                     observacion: concepto.trim(),
                     monto: parseFloat(monto),
                     moneda,
                     fecha_pago: fechaStr,
                     estado: 'pendiente',
                 }, { headers: { Authorization: `Bearer ${token}` } });
+                onSaved({
+                    ...res.data,
+                    observacion: concepto.trim(),
+                    monto: parseFloat(monto),
+                    moneda,
+                    fecha_pago: fechaStr,
+                    estado: 'pendiente',
+                    tipoItem: 'egreso',
+                });
             }
-            onSaved();
             onClose();
         } catch (err) {
             console.error(err);

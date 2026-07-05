@@ -586,7 +586,21 @@ const Dashboard = () => {
                     tipo="ingreso"
                     selectedDate={selectedDate}
                     onClose={() => setShowCobroModal(false)}
-                    onSaved={() => { setShowCobroModal(false); fetchData(); }}
+                    onSaved={(nuevoItem) => {
+                        setShowCobroModal(false);
+                        // Agregar al estado local inmediatamente
+                        setIngresosData(prev => [...prev, nuevoItem]);
+                        // Actualizar KPI si es del mes actual y está pendiente
+                        const hoyD = new Date();
+                        const itemFecha = new Date(nuevoItem.fecha_estimada + 'T00:00:00');
+                        if (itemFecha.getMonth() === hoyD.getMonth() && itemFecha.getFullYear() === hoyD.getFullYear()) {
+                            setKpiData(prev => ({
+                                ...prev,
+                                ingresosBOB: nuevoItem.moneda !== 'USD' ? prev.ingresosBOB + parseFloat(nuevoItem.monto) : prev.ingresosBOB,
+                                ingresosUSD: nuevoItem.moneda === 'USD' ? prev.ingresosUSD + parseFloat(nuevoItem.monto) : prev.ingresosUSD,
+                            }));
+                        }
+                    }}
                 />
             )}
             {showPagoModal && (
@@ -594,9 +608,23 @@ const Dashboard = () => {
                     tipo="egreso"
                     selectedDate={selectedDate}
                     onClose={() => setShowPagoModal(false)}
-                    onSaved={() => { setShowPagoModal(false); fetchData(); }}
+                    onSaved={(nuevoItem) => {
+                        setShowPagoModal(false);
+                        // Agregar al estado local inmediatamente
+                        setEgresosData(prev => [...prev, nuevoItem]);
+                        // Actualizar KPI si es del mes actual
+                        const hoyD = new Date();
+                        const itemFecha = new Date(nuevoItem.fecha_pago + 'T00:00:00');
+                        if (itemFecha.getMonth() === hoyD.getMonth() && itemFecha.getFullYear() === hoyD.getFullYear()) {
+                            setKpiData(prev => ({
+                                ...prev,
+                                egresosPendientes: prev.egresosPendientes + parseFloat(nuevoItem.monto),
+                            }));
+                        }
+                    }}
                 />
             )}
+
         </div>
     );
 };
