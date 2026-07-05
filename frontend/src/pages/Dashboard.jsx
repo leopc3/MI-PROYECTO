@@ -597,7 +597,6 @@ const Dashboard = () => {
                     onSaved={() => { setShowPagoModal(false); fetchData(); }}
                 />
             )}
-            )}
         </div>
     );
 };
