@@ -244,13 +244,24 @@ const Dashboard = () => {
 
     return (
         <div className="p-4 md:p-8 max-w-7xl mx-auto bg-gray-50 min-h-screen">
-            {/* Header Rediseñado */}
-            <div className="flex justify-between items-center mb-6 pt-2">
+            {/* Header con mini-stats */}
+            <div className="flex justify-between items-start mb-6 pt-2">
                 <div>
                     <h1 className="text-3xl font-black text-gray-800 tracking-tight">Hola, Admin 👋</h1>
                     <p className="text-sm font-bold text-gray-400 capitalize">
                         {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
+                    {/* Mini-stats bajo el saludo */}
+                    <div className="flex items-center gap-3 mt-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 bg-white border border-gray-100 rounded-2xl px-3 py-1.5 shadow-sm">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Empresas</span>
+                            <span className="text-sm font-black text-gray-800">{kpiData.totalEmpresas}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 bg-white border border-red-100 rounded-2xl px-3 py-1.5 shadow-sm">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Deuda</span>
+                            <span className="text-sm font-black text-red-500">Bs. {kpiData.deuda.toFixed(0)}</span>
+                        </div>
+                    </div>
                 </div>
                 <div className="flex gap-2">
                     <button onClick={() => setShowSearch(true)} className="p-2.5 bg-white border border-gray-200 rounded-full text-brand shadow-sm active:scale-95 transition-transform">
@@ -289,8 +300,8 @@ const Dashboard = () => {
                 </div>
             )}
 
-            {/* KPIs Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+            {/* KPIs Cards — 5 tarjetas: 3 datos + 2 acciones rápidas */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
                 <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
                     <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Por Cobrar</p>
                     <p className="text-xl font-black mt-1 text-green-500">
@@ -309,33 +320,23 @@ const Dashboard = () => {
                         Bs. {kpiData.egresosPendientes.toFixed(0)}
                     </p>
                 </div>
-                <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
-                    <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Empresas</p>
-                    <p className="text-xl font-black mt-1 text-gray-800">{kpiData.totalEmpresas}</p>
-                </div>
-                <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
-                    <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Deuda Activa</p>
-                    <p className="text-xl font-black mt-1 text-red-500">Bs. {kpiData.deuda.toFixed(0)}</p>
-                </div>
-                <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-center items-center bg-gradient-to-br from-brand/10 to-brand/5 cursor-pointer hover:shadow-md transition-all active:scale-95" onClick={() => setShowTaskModal(true)}>
-                    <div className="flex flex-col items-center gap-1 font-black text-brand">
-                        <span className="text-sm">Añadir Tarea</span>
-                        <div className="bg-white rounded-full p-1 shadow-sm"><ChevronRight size={16} /></div>
-                    </div>
-                </div>
                 {/* Cobro Rápido */}
-                <div className="bg-white p-5 rounded-3xl border border-green-100 shadow-sm flex flex-col justify-center items-center bg-gradient-to-br from-green-50 to-green-50/30 cursor-pointer hover:shadow-md transition-all active:scale-95" onClick={() => setShowCobroModal(true)}>
-                    <div className="flex flex-col items-center gap-1 font-black text-green-600">
-                        <TrendingUp size={18} />
-                        <span className="text-xs text-center leading-tight">Cobro Rápido</span>
-                    </div>
+                <div
+                    onClick={() => setShowCobroModal(true)}
+                    className="bg-white p-5 rounded-3xl border border-green-100 shadow-sm flex flex-col justify-center items-center bg-gradient-to-br from-green-50 to-emerald-50/30 cursor-pointer hover:shadow-md transition-all active:scale-95"
+                >
+                    <TrendingUp size={22} className="text-green-500 mb-1" />
+                    <span className="text-sm font-black text-green-600 text-center leading-tight">Cobro Rápido</span>
+                    <span className="text-[10px] text-green-400 font-bold mt-0.5">+ Registrar</span>
                 </div>
                 {/* Pago Rápido */}
-                <div className="bg-white p-5 rounded-3xl border border-red-100 shadow-sm flex flex-col justify-center items-center bg-gradient-to-br from-red-50 to-red-50/30 cursor-pointer hover:shadow-md transition-all active:scale-95" onClick={() => setShowPagoModal(true)}>
-                    <div className="flex flex-col items-center gap-1 font-black text-red-500">
-                        <TrendingDown size={18} />
-                        <span className="text-xs text-center leading-tight">Pago Rápido</span>
-                    </div>
+                <div
+                    onClick={() => setShowPagoModal(true)}
+                    className="bg-white p-5 rounded-3xl border border-red-100 shadow-sm flex flex-col justify-center items-center bg-gradient-to-br from-red-50 to-rose-50/30 cursor-pointer hover:shadow-md transition-all active:scale-95"
+                >
+                    <TrendingDown size={22} className="text-red-400 mb-1" />
+                    <span className="text-sm font-black text-red-500 text-center leading-tight">Pago Rápido</span>
+                    <span className="text-[10px] text-red-300 font-bold mt-0.5">+ Registrar</span>
                 </div>
             </div>
 
