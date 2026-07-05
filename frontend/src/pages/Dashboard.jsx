@@ -7,6 +7,7 @@ import MonthCalendar from '../components/MonthCalendar';
 import AddTaskModal from '../components/AddTaskModal';
 import EditTaskModal from '../components/EditTaskModal';
 import GlobalSearchModal from '../components/GlobalSearchModal';
+import QuickFinanzaModal from '../components/QuickFinanzaModal';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -23,6 +24,8 @@ const Dashboard = () => {
     const [showTaskModal, setShowTaskModal] = useState(false);
     const [editTask, setEditTask] = useState(null);
     const [showSearch, setShowSearch] = useState(false);
+    const [showCobroModal, setShowCobroModal] = useState(false);
+    const [showPagoModal, setShowPagoModal] = useState(false);
 
     const fetchData = async () => {
         setLoading(true);
@@ -162,7 +165,7 @@ const Dashboard = () => {
         ...egresosVencidos.map(e => ({ ...e, tipoItem: 'egreso' }))
     ] : actividadesDelDia;
 
-    // Agrupar retrasadas por proyecto (solo cuando viendoRetrasados)
+    // Agrupar retrasadas por proyecto
     const retrasadasPorProyecto = (() => {
         if (!viendoRetrasados) return {};
         const grupos = {};
@@ -174,14 +177,31 @@ const Dashboard = () => {
             if (!grupos[key]) grupos[key] = { label, items: [] };
             grupos[key].items.push({ ...t, tipoItem: 'tarea' });
         });
-        // Cobros y pagos van en grupo financiero
         const finItems = [
             ...ingresosVencidos.map(i => ({ ...i, tipoItem: 'ingreso' })),
             ...egresosVencidos.map(e => ({ ...e, tipoItem: 'egreso' }))
         ];
-        if (finItems.length > 0) {
-            grupos['__finanzas__'] = { label: 'Cobros y Pagos Vencidos', items: finItems };
-        }
+        if (finItems.length > 0) grupos['__finanzas__'] = { label: 'Cobros y Pagos Vencidos', items: finItems };
+        return grupos;
+    })();
+
+    // Agrupar actividades del día por proyecto (mismo patrón)
+    const actividadesDelDiaPorGrupo = (() => {
+        if (viendoRetrasados) return {};
+        const grupos = {};
+        tareasDelDia.forEach(t => {
+            const key = t.proyecto_id ? `proy_${t.proyecto_id}` : '__propias__';
+            const label = t.proyecto_nombre
+                ? `${t.empresa_nombre ? t.empresa_nombre + ': ' : ''}${t.proyecto_nombre}`
+                : 'Propias / Sin Proyecto';
+            if (!grupos[key]) grupos[key] = { label, items: [] };
+            grupos[key].items.push({ ...t, tipoItem: 'tarea' });
+        });
+        const finItems = [
+            ...ingresosDelDia.map(i => ({ ...i, tipoItem: 'ingreso' })),
+            ...egresosDelDia.map(e => ({ ...e, tipoItem: 'egreso' }))
+        ];
+        if (finItems.length > 0) grupos['__finanzas__'] = { label: 'Cobros y Pagos del Día', items: finItems };
         return grupos;
     })();
 
@@ -301,6 +321,20 @@ const Dashboard = () => {
                     <div className="flex flex-col items-center gap-1 font-black text-brand">
                         <span className="text-sm">Añadir Tarea</span>
                         <div className="bg-white rounded-full p-1 shadow-sm"><ChevronRight size={16} /></div>
+                    </div>
+                </div>
+                {/* Cobro Rápido */}
+                <div className="bg-white p-5 rounded-3xl border border-green-100 shadow-sm flex flex-col justify-center items-center bg-gradient-to-br from-green-50 to-green-50/30 cursor-pointer hover:shadow-md transition-all active:scale-95" onClick={() => setShowCobroModal(true)}>
+                    <div className="flex flex-col items-center gap-1 font-black text-green-600">
+                        <TrendingUp size={18} />
+                        <span className="text-xs text-center leading-tight">Cobro Rápido</span>
+                    </div>
+                </div>
+                {/* Pago Rápido */}
+                <div className="bg-white p-5 rounded-3xl border border-red-100 shadow-sm flex flex-col justify-center items-center bg-gradient-to-br from-red-50 to-red-50/30 cursor-pointer hover:shadow-md transition-all active:scale-95" onClick={() => setShowPagoModal(true)}>
+                    <div className="flex flex-col items-center gap-1 font-black text-red-500">
+                        <TrendingDown size={18} />
+                        <span className="text-xs text-center leading-tight">Pago Rápido</span>
                     </div>
                 </div>
             </div>
@@ -432,70 +466,86 @@ const Dashboard = () => {
                             ))}
                         </div>
                     )
-                ) : listaAMostrar.length > 0 ? (
-                    // ── VISTA NORMAL DEL DÍA ──
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {listaAMostrar.map(actItem => {
-                            const isTarea = actItem.tipoItem === 'tarea';
-                            const isIngreso = actItem.tipoItem === 'ingreso';
-                            const isPagado = actItem.estado === 'pagado';
-                            const fechaRef = isTarea ? actItem.fecha_asignada : (isIngreso ? actItem.fecha_estimada : actItem.fecha_pago);
-                            const isVencida = fechaRef?.split('T')[0] < hoyStr && !isPagado;
-
-                            return (
-                                <div key={`${actItem.tipoItem}-${actItem.id}`} className={`bg-white p-4 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden flex gap-4 items-center transition-all ${isPagado ? 'opacity-60 bg-gray-50' : ''}`}>
-                                    {isVencida && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500" />}
-                                    <button
-                                        onClick={() => isTarea ? handleCumplir(actItem.id) : handleToggleFinanza(actItem.id, actItem.tipoItem)}
-                                        className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${isPagado ? 'bg-gray-200 text-gray-500' : isTarea ? 'border-2 border-gray-200 text-gray-300 hover:border-brand hover:text-brand' : isIngreso ? 'bg-green-50 text-green-500 hover:bg-green-100' : 'bg-red-50 text-red-500 hover:bg-red-100'}`}
-                                    >
-                                        {isPagado ? <CheckCircle2 size={24} /> : isTarea ? <CheckCircle2 size={24} /> : isIngreso ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
-                                    </button>
-                                    <div className={`flex-1 min-w-0 py-1 ${isPagado ? 'line-through text-gray-400' : ''}`}>
-                                        <div className="flex flex-col gap-0.5">
-                                            <div className="flex items-center gap-2">
-                                                <p className={`font-bold leading-tight truncate ${isVencida ? 'text-red-600' : 'text-gray-800'}`}>
-                                                    {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre}` : `Pago: ${actItem.observacion}`}
-                                                </p>
-                                            </div>
-                                            {isTarea && actItem.observacion && (
-                                                <p className={`text-[12px] italic leading-snug mt-0.5 line-clamp-2 ${isPagado ? 'text-gray-400 opacity-70' : 'text-gray-500 font-medium'}`}>
-                                                    {actItem.observacion}
-                                                </p>
-                                            )}
-                                            {/* Badge días de retraso */}
-                                            {isVencida && (() => {
-                                                const dias = diasRetraso(isTarea ? actItem.fecha_asignada : (isIngreso ? actItem.fecha_estimada : actItem.fecha_pago));
-                                                return dias > 0 ? (
-                                                    <span className="inline-flex items-center gap-1 text-[10px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded-md mt-1 w-fit">
-                                                        ⏰ {dias} día{dias !== 1 ? 's' : ''} de retraso
-                                                    </span>
-                                                ) : null;
-                                            })()}
-                                        </div>
-                                        <div className="flex flex-wrap gap-1 mt-1.5 items-center">
-                                            {!isTarea && (
-                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${isIngreso ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                                                    {actItem.moneda === 'USD' ? '$' : 'Bs.'} {actItem.monto}
-                                                </span>
-                                            )}
-                                            {isTarea && actItem.proyecto_nombre && (
-                                                <span className="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-md font-black uppercase tracking-wider">
-                                                    {actItem.empresa_nombre ? `${actItem.empresa_nombre}: ` : ''}{actItem.proyecto_nombre}
-                                                </span>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {isTarea && (
-                                        <div className="flex flex-col gap-1 shrink-0">
-                                            <button onClick={() => setEditTask(actItem)} className="p-2 bg-gray-50 rounded-xl text-gray-400 active:bg-gray-200 transition-colors"><PenSquare size={16} /></button>
-                                            <button onClick={() => handleEliminar(actItem.id)} className="p-2 bg-red-50 rounded-xl text-red-500 active:bg-red-200 transition-colors"><Trash2 size={16} /></button>
-                                        </div>
-                                    )}
+                ) : Object.keys(actividadesDelDiaPorGrupo).length > 0 ? (
+                    // ── VISTA AGRUPADA POR PROYECTO (DÍA) ──
+                    <div className="space-y-6">
+                        {Object.entries(actividadesDelDiaPorGrupo).map(([key, grupo]) => (
+                            <div key={key}>
+                                {/* Cabecera del grupo */}
+                                <div className="flex items-center gap-2 mb-3 px-1">
+                                    <div className={`w-2 h-2 rounded-full shrink-0 ${
+                                        key === '__finanzas__' ? 'bg-green-500' :
+                                        key === '__propias__' ? 'bg-gray-400' : 'bg-brand'
+                                    }`} />
+                                    <p className={`text-xs font-black uppercase tracking-widest truncate ${
+                                        key === '__finanzas__' ? 'text-green-600' :
+                                        key === '__propias__' ? 'text-gray-500' : 'text-brand'
+                                    }`}>
+                                        {grupo.label}
+                                    </p>
+                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                                        key === '__finanzas__' ? 'bg-green-100 text-green-600' :
+                                        key === '__propias__' ? 'bg-gray-100 text-gray-500' : 'bg-orange-100 text-brand'
+                                    }`}>
+                                        {grupo.items.length}
+                                    </span>
                                 </div>
-                            );
-                        })}
+
+                                {/* Tarjetas del grupo */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    {grupo.items.map(actItem => {
+                                        const isTarea = actItem.tipoItem === 'tarea';
+                                        const isIngreso = actItem.tipoItem === 'ingreso';
+                                        const isPagado = actItem.estado === 'pagado';
+                                        const fechaRef = isTarea ? actItem.fecha_asignada : (isIngreso ? actItem.fecha_estimada : actItem.fecha_pago);
+                                        const isVencida = fechaRef?.split('T')[0] < hoyStr && !isPagado;
+
+                                        return (
+                                            <div key={`${actItem.tipoItem}-${actItem.id}`} className={`bg-white p-4 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden flex gap-4 items-center transition-all ${isPagado ? 'opacity-60 bg-gray-50' : ''}`}>
+                                                {isVencida && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500" />}
+
+                                                <button
+                                                    onClick={() => isTarea ? handleCumplir(actItem.id) : handleToggleFinanza(actItem.id, actItem.tipoItem)}
+                                                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${isPagado ? 'bg-gray-200 text-gray-500' : isTarea ? 'border-2 border-gray-200 text-gray-300 hover:border-brand hover:text-brand' : isIngreso ? 'bg-green-50 text-green-500 hover:bg-green-100' : 'bg-red-50 text-red-500 hover:bg-red-100'}`}
+                                                >
+                                                    {isPagado ? <CheckCircle2 size={24} /> : isTarea ? <CheckCircle2 size={24} /> : isIngreso ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
+                                                </button>
+
+                                                <div className={`flex-1 min-w-0 py-1 ${isPagado ? 'line-through text-gray-400' : ''}`}>
+                                                    <p className={`font-bold leading-tight truncate text-sm ${isVencida ? 'text-red-600' : 'text-gray-800'}`}>
+                                                        {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre}` : `Pago: ${actItem.observacion}`}
+                                                    </p>
+                                                    {isTarea && actItem.observacion && (
+                                                        <p className="text-[11px] italic text-gray-400 mt-0.5 line-clamp-1">{actItem.observacion}</p>
+                                                    )}
+                                                    <div className="flex flex-wrap gap-1 mt-1 items-center">
+                                                        {isVencida && diasRetraso(fechaRef) > 0 && (
+                                                            <span className="text-[10px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded-md">
+                                                                ⏰ {diasRetraso(fechaRef)} día{diasRetraso(fechaRef) !== 1 ? 's' : ''} de retraso
+                                                            </span>
+                                                        )}
+                                                        {!isTarea && (
+                                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${isIngreso ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                                {actItem.moneda === 'USD' ? '$' : 'Bs.'} {actItem.monto}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {isTarea && (
+                                                    <div className="flex flex-col gap-1 shrink-0">
+                                                        <button onClick={() => setEditTask(actItem)} className="p-2 bg-gray-50 rounded-xl text-gray-400 active:bg-gray-200 transition-colors"><PenSquare size={16} /></button>
+                                                        <button onClick={() => handleEliminar(actItem.id)} className="p-2 bg-red-50 rounded-xl text-red-500 active:bg-red-200 transition-colors"><Trash2 size={16} /></button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
                     </div>
+
                 ) : (
                     <div className="bg-white rounded-3xl p-8 border border-gray-100 flex flex-col items-center shadow-sm text-center">
                         <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${viendoRetrasados ? 'bg-red-50 text-red-300' : 'bg-gray-50 text-gray-300'}`}>
@@ -520,6 +570,20 @@ const Dashboard = () => {
             )}
             {showSearch && (
                 <GlobalSearchModal onClose={() => setShowSearch(false)} />
+            )}
+            {showCobroModal && (
+                <QuickFinanzaModal
+                    tipo="ingreso"
+                    onClose={() => setShowCobroModal(false)}
+                    onSaved={() => { setShowCobroModal(false); fetchData(); }}
+                />
+            )}
+            {showPagoModal && (
+                <QuickFinanzaModal
+                    tipo="egreso"
+                    onClose={() => setShowPagoModal(false)}
+                    onSaved={() => { setShowPagoModal(false); fetchData(); }}
+                />
             )}
         </div>
     );
