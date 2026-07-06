@@ -8,9 +8,9 @@ const obtenerIngresos = async (req, res) => {
     try {
         const { empresa_id } = req.query;
         let query = `
-            SELECT i.*, e.nombre as empresa_nombre
+            SELECT i.*, COALESCE(e.nombre, i.empresa_nombre_libre) as empresa_nombre
             FROM ingresos i
-            JOIN empresas e ON i.empresa_id = e.id
+            LEFT JOIN empresas e ON i.empresa_id = e.id
         `;
         const params = [];
         if (empresa_id) {
@@ -26,14 +26,23 @@ const obtenerIngresos = async (req, res) => {
 };
 
 const crearIngreso = async (req, res) => {
-    const { empresa_id, monto, moneda, fecha_estimada, observacion, es_recurrente_mensual } = req.body;
+    // empresa_id para cobros normales, empresa_nombre para cobros rápidos
+    const { empresa_id, empresa_nombre, monto, moneda, fecha_estimada, observacion, es_recurrente_mensual } = req.body;
     try {
+        // Si no hay empresa_id, guardar como cobro rápido con nombre libre
+        if (!empresa_id) {
+            const result = await pool.query(
+                'INSERT INTO ingresos (empresa_nombre_libre, monto, moneda, fecha_estimada, observacion, es_recurrente_mensual) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+                [empresa_nombre || 'Cobro rápido', monto, moneda || 'BOB', fecha_estimada, observacion, false]
+            );
+            return res.json(result.rows[0]);
+        }
+
         const result = await pool.query(
             'INSERT INTO ingresos (empresa_id, monto, moneda, fecha_estimada, observacion, es_recurrente_mensual) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
             [empresa_id, monto, moneda || 'BOB', fecha_estimada, observacion, es_recurrente_mensual || false]
         );
 
-        // Si es recurrente, auto-generar los próximos 11 meses (12 en total)
         if (es_recurrente_mensual) {
             const fechaBase = new Date(fecha_estimada);
             for (let i = 1; i <= 11; i++) {
