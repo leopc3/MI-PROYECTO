@@ -206,11 +206,7 @@ const Dashboard = () => {
     })();
 
     const handleToggleFinanza = async (id, tipo) => {
-        // Actualización optimista: toggle local inmediato
-        const toggle = (item) => ({
-            ...item,
-            estado: item.estado === 'pagado' ? 'pendiente' : 'pagado'
-        });
+        const toggle = (item) => ({ ...item, estado: item.estado === 'pagado' ? 'pendiente' : 'pagado' });
         if (tipo === 'ingreso') {
             setIngresosData(prev => prev.map(i => i.id === id ? toggle(i) : i));
         } else {
@@ -220,12 +216,30 @@ const Dashboard = () => {
             await axios.patch(`http://localhost:5000/api/finanzas/${tipo}s/${id}/estado`);
         } catch (error) {
             console.error(error);
-            // Revertir si falla
             if (tipo === 'ingreso') {
                 setIngresosData(prev => prev.map(i => i.id === id ? toggle(i) : i));
             } else {
                 setEgresosData(prev => prev.map(e => e.id === id ? toggle(e) : e));
             }
+        }
+    };
+
+    const handleEliminarFinanza = async (id, tipo) => {
+        const label = tipo === 'ingreso' ? 'cobro' : 'pago';
+        if (!window.confirm(`¿Eliminar este ${label}? Esta acción no se puede deshacer.`)) return;
+        // Optimista
+        if (tipo === 'ingreso') {
+            setIngresosData(prev => prev.filter(i => i.id !== id));
+        } else {
+            setEgresosData(prev => prev.filter(e => e.id !== id));
+        }
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(`http://localhost:5000/api/finanzas/${tipo}s/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+        } catch (err) {
+            console.error(err);
+            alert('No se pudo eliminar. Recarga la página.');
+            fetchData();
         }
     };
 
@@ -439,7 +453,7 @@ const Dashboard = () => {
 
                                                     <div className={`flex-1 min-w-0 py-1 ${isPagado ? 'line-through text-gray-400' : ''}`}>
                                                         <p className={`font-bold leading-tight truncate text-sm ${isVencida ? 'text-red-600' : 'text-gray-800'}`}>
-                                                            {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre}` : `Pago: ${actItem.observacion}`}
+                                                            {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre || actItem.observacion || 'Cobro rápido'}` : `Pago: ${actItem.observacion || 'Pago rápido'}`}
                                                         </p>
                                                         {isTarea && actItem.observacion && (
                                                             <p className="text-[11px] italic text-gray-400 mt-0.5 line-clamp-1">{actItem.observacion}</p>
@@ -542,10 +556,14 @@ const Dashboard = () => {
                                                     </div>
                                                 </div>
 
-                                                {isTarea && (
+                                                {isTarea ? (
                                                     <div className="flex flex-col gap-1 shrink-0">
                                                         <button onClick={() => setEditTask(actItem)} className="p-2 bg-gray-50 rounded-xl text-gray-400 active:bg-gray-200 transition-colors"><PenSquare size={16} /></button>
                                                         <button onClick={() => handleEliminar(actItem.id)} className="p-2 bg-red-50 rounded-xl text-red-500 active:bg-red-200 transition-colors"><Trash2 size={16} /></button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex flex-col gap-1 shrink-0">
+                                                        <button onClick={() => handleEliminarFinanza(actItem.id, actItem.tipoItem)} className="p-2 bg-red-50 rounded-xl text-red-400 active:bg-red-200 transition-colors" title="Eliminar"><Trash2 size={16} /></button>
                                                     </div>
                                                 )}
                                             </div>
