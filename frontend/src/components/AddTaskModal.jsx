@@ -24,9 +24,11 @@ const AddTaskModal = ({ selectedDate, tituloInicial, onClose, onSaved }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const d = selectedDate;
+            const fechaLocal = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             await axios.post('http://localhost:5000/api/tareas', {
                 titulo,
-                fecha_asignada: selectedDate.toISOString().split('T')[0],
+                fecha_asignada: fechaLocal,
                 observacion: obs,
                 creado_por: 'admin',
                 proyecto_id: proyectoId || null,
