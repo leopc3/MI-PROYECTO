@@ -3,7 +3,8 @@ const router = express.Router();
 const {
     obtenerIngresos, crearIngreso, actualizarIngreso, eliminarIngreso, toggleEstadoIngreso,
     obtenerEgresos, crearEgreso, actualizarEgreso, eliminarEgreso, toggleEstadoEgreso,
-    actualizarSerieIngreso, actualizarSerieEgreso
+    actualizarSerieIngreso, actualizarSerieEgreso,
+    eliminarSerieIngreso, eliminarSerieEgreso
 } = require('../controllers/finanzasController');
 
 // Ingresos
@@ -13,6 +14,7 @@ router.put('/ingresos/:id', actualizarIngreso);
 router.put('/ingresos/:id/serie', actualizarSerieIngreso);
 router.patch('/ingresos/:id/estado', toggleEstadoIngreso);
 router.delete('/ingresos/:id', eliminarIngreso);
+router.delete('/ingresos/:id/serie', eliminarSerieIngreso);
 
 // Egresos
 router.get('/egresos', obtenerEgresos);
@@ -21,5 +23,6 @@ router.put('/egresos/:id', actualizarEgreso);
 router.put('/egresos/:id/serie', actualizarSerieEgreso);
 router.patch('/egresos/:id/estado', toggleEstadoEgreso);
 router.delete('/egresos/:id', eliminarEgreso);
+router.delete('/egresos/:id/serie', eliminarSerieEgreso);
 
 module.exports = router;

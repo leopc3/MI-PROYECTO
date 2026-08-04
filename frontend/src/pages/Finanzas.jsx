@@ -39,12 +39,39 @@ const Finanzas = () => {
 
     const handleEliminar = async (id) => {
         const tipo = tab === 'ingresos' ? 'ingreso' : 'egreso';
-        if (!window.confirm(`¿Eliminar este ${tipo}?`)) return;
+        const item = data.find(d => d.id === id);
+        const esRecurrente = item?.es_recurrente_mensual;
+
+        let eliminarSerie = false;
+
+        if (esRecurrente) {
+            // Mostrar diálogo con 3 opciones usando confirm/cancel
+            const respuesta = window.confirm(
+                `Este ${tipo} es recurrente mensual.\n\n` +
+                `¿Deseas eliminar TODOS los meses futuros pendientes de esta serie?\n\n` +
+                `OK → Eliminar este mes + todos los futuros pendientes\n` +
+                `Cancelar → Eliminar solo este mes`
+            );
+            eliminarSerie = respuesta;
+        } else {
+            if (!window.confirm(`¿Eliminar este ${tipo}? Esta acción no se puede deshacer.`)) return;
+        }
+
         try {
-            await axios.delete(`http://localhost:5000/api/finanzas/${tab}/${id}`);
+            const token = localStorage.getItem('token');
+            if (eliminarSerie) {
+                await axios.delete(`http://localhost:5000/api/finanzas/${tab}/${id}/serie`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+            } else {
+                await axios.delete(`http://localhost:5000/api/finanzas/${tab}/${id}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+            }
             fetchData();
         } catch (error) { console.error(error); }
     };
+
 
     const handleToggleEstado = async (id, tipo) => {
         try {

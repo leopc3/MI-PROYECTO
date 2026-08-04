@@ -251,8 +251,57 @@ const actualizarSerieEgreso = async (req, res) => {
     }
 };
 
+// ─────────────────────────────────────────
+// ELIMINAR SERIE RECURRENTE
+// ─────────────────────────────────────────
+
+const eliminarSerieIngreso = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const current = await pool.query('SELECT * FROM ingresos WHERE id=$1', [id]);
+        if (current.rows.length === 0) return res.status(404).json({ error: 'No encontrado' });
+        const item = current.rows[0];
+        const hoy = new Date().toISOString().split('T')[0];
+
+        // Eliminar este + todos los futuros pendientes de la misma empresa y recurrente
+        const result = await pool.query(
+            `DELETE FROM ingresos
+             WHERE (id=$1)
+             OR (empresa_id=$2 AND es_recurrente_mensual=true AND estado='pendiente' AND fecha_estimada >= $3)
+             RETURNING id`,
+            [id, item.empresa_id, hoy]
+        );
+        res.json({ message: 'Serie eliminada', eliminados: result.rowCount });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+const eliminarSerieEgreso = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const current = await pool.query('SELECT * FROM egresos WHERE id=$1', [id]);
+        if (current.rows.length === 0) return res.status(404).json({ error: 'No encontrado' });
+        const item = current.rows[0];
+        const hoy = new Date().toISOString().split('T')[0];
+
+        // Eliminar este + todos los futuros pendientes con mismo observacion y recurrente
+        const result = await pool.query(
+            `DELETE FROM egresos
+             WHERE (id=$1)
+             OR (observacion=$2 AND es_recurrente_mensual=true AND estado='pendiente' AND fecha_pago >= $3)
+             RETURNING id`,
+            [id, item.observacion, hoy]
+        );
+        res.json({ message: 'Serie eliminada', eliminados: result.rowCount });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     obtenerIngresos, crearIngreso, actualizarIngreso, eliminarIngreso, toggleEstadoIngreso,
     obtenerEgresos, crearEgreso, actualizarEgreso, eliminarEgreso, toggleEstadoEgreso,
-    actualizarSerieIngreso, actualizarSerieEgreso
+    actualizarSerieIngreso, actualizarSerieEgreso,
+    eliminarSerieIngreso, eliminarSerieEgreso
 };
