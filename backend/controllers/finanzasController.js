@@ -176,7 +176,83 @@ const toggleEstadoEgreso = async (req, res) => {
     }
 };
 
+// ─────────────────────────────────────────
+// ACTUALIZAR SERIE RECURRENTE
+// ─────────────────────────────────────────
+
+// Actualiza este ingreso Y todos los futuros pendientes de la misma serie
+const actualizarSerieIngreso = async (req, res) => {
+    const { id } = req.params;
+    const { empresa_id, monto, moneda, observacion } = req.body;
+    try {
+        // 1. Obtener el item actual para saber su fecha y empresa
+        const current = await pool.query('SELECT * FROM ingresos WHERE id=$1', [id]);
+        if (current.rows.length === 0) return res.status(404).json({ error: 'No encontrado' });
+        const item = current.rows[0];
+
+        // 2. Actualizar este registro
+        await pool.query(
+            'UPDATE ingresos SET empresa_id=$1, monto=$2, moneda=$3, observacion=$4 WHERE id=$5',
+            [empresa_id || item.empresa_id, monto, moneda || 'BOB', observacion, id]
+        );
+
+        // 3. Actualizar TODOS los futuros pendientes de la misma serie
+        // Identificados por: mismo empresa_id, es_recurrente_mensual=true, estado pendiente, fecha >= hoy
+        const hoy = new Date().toISOString().split('T')[0];
+        const updated = await pool.query(
+            `UPDATE ingresos
+             SET monto=$1, moneda=$2, observacion=$3
+             WHERE empresa_id=$4
+               AND es_recurrente_mensual=true
+               AND estado='pendiente'
+               AND fecha_estimada > $5
+             RETURNING id`,
+            [monto, moneda || 'BOB', observacion, empresa_id || item.empresa_id, hoy]
+        );
+
+        res.json({ message: 'Serie actualizada', actualizados: updated.rowCount + 1 });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Actualiza este egreso Y todos los futuros pendientes de la misma serie
+const actualizarSerieEgreso = async (req, res) => {
+    const { id } = req.params;
+    const { monto, moneda, observacion } = req.body;
+    try {
+        // 1. Obtener item actual
+        const current = await pool.query('SELECT * FROM egresos WHERE id=$1', [id]);
+        if (current.rows.length === 0) return res.status(404).json({ error: 'No encontrado' });
+        const item = current.rows[0];
+
+        // 2. Actualizar este registro
+        await pool.query(
+            'UPDATE egresos SET monto=$1, moneda=$2, observacion=$3 WHERE id=$4',
+            [monto, moneda || 'BOB', observacion, id]
+        );
+
+        // 3. Actualizar todos los futuros pendientes con mismo observacion y recurrente
+        const hoy = new Date().toISOString().split('T')[0];
+        const updated = await pool.query(
+            `UPDATE egresos
+             SET monto=$1, moneda=$2, observacion=$3
+             WHERE observacion=$4
+               AND es_recurrente_mensual=true
+               AND estado='pendiente'
+               AND fecha_pago > $5
+             RETURNING id`,
+            [monto, moneda || 'BOB', observacion, item.observacion, hoy]
+        );
+
+        res.json({ message: 'Serie actualizada', actualizados: updated.rowCount + 1 });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
 module.exports = {
     obtenerIngresos, crearIngreso, actualizarIngreso, eliminarIngreso, toggleEstadoIngreso,
-    obtenerEgresos, crearEgreso, actualizarEgreso, eliminarEgreso, toggleEstadoEgreso
+    obtenerEgresos, crearEgreso, actualizarEgreso, eliminarEgreso, toggleEstadoEgreso,
+    actualizarSerieIngreso, actualizarSerieEgreso
 };
