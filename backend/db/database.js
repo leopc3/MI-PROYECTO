@@ -7,10 +7,12 @@ const pool = new Pool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: process.env.DB_PORT,
+  // SSL requerido para Supabase
+  ssl: process.env.DB_SSL === 'false' ? false : { rejectUnauthorized: false }
 });
 
 pool.on('connect', () => {
-  console.log('✅ Conectado a la base de datos PostgreSQL (ventasya_db)');
+  console.log('✅ Conectado a la base de datos PostgreSQL');
 });
 
 module.exports = pool;
