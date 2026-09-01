@@ -27,7 +27,7 @@ const QuickFinanzaModal = ({ tipo, selectedDate, onClose, onSaved }) => {
         try {
             const token = localStorage.getItem('token');
             if (isIngreso) {
-                const res = await axios.post('${import.meta.env.VITE_API_URL || ''}/api/finanzas/ingresos', {
+                const res = await axios.post('/api/finanzas/ingresos', {
                     empresa_nombre: concepto.trim(),
                     monto: parseFloat(monto),
                     moneda,
@@ -45,7 +45,7 @@ const QuickFinanzaModal = ({ tipo, selectedDate, onClose, onSaved }) => {
                     tipoItem: 'ingreso',
                 });
             } else {
-                const res = await axios.post('${import.meta.env.VITE_API_URL || ''}/api/finanzas/egresos', {
+                const res = await axios.post('/api/finanzas/egresos', {
                     observacion: concepto.trim(),
                     monto: parseFloat(monto),
                     moneda,

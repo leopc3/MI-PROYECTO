@@ -13,7 +13,7 @@ const AddTaskModal = ({ selectedDate, tituloInicial, onClose, onSaved }) => {
         if (proyectosLoaded) return;
         const token = localStorage.getItem('token');
         try {
-            const res = await axios.get('${import.meta.env.VITE_API_URL || ''}/api/proyectos', {
+            const res = await axios.get('/api/proyectos', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setProyectos(res.data);
@@ -26,7 +26,7 @@ const AddTaskModal = ({ selectedDate, tituloInicial, onClose, onSaved }) => {
         try {
             const d = selectedDate;
             const fechaLocal = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-            await axios.post('${import.meta.env.VITE_API_URL || ''}/api/tareas', {
+            await axios.post('/api/tareas', {
                 titulo,
                 fecha_asignada: fechaLocal,
                 observacion: obs,

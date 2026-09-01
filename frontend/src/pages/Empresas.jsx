@@ -13,7 +13,7 @@ const Empresas = () => {
     const fetchEmpresas = async () => {
         const token = localStorage.getItem('token');
         try {
-            const res = await axios.get('${import.meta.env.VITE_API_URL || ''}/api/empresas', {
+            const res = await axios.get('/api/empresas', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setEmpresas(res.data);
@@ -26,7 +26,7 @@ const Empresas = () => {
         if (!window.confirm('¿Eliminar esta empresa? Se eliminarán todos sus proyectos y tareas.')) return;
         const token = localStorage.getItem('token');
         try {
-            await axios.delete(`${import.meta.env.VITE_API_URL || ''}/api/empresas/${id}`, {
+            await axios.delete(`/api/empresas/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setEmpresas(empresas.filter(e => e.id !== id));

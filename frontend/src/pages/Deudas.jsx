@@ -11,7 +11,7 @@ const Deudas = () => {
 
     const fetchDeudas = async () => {
         try {
-            const res = await axios.get('${import.meta.env.VITE_API_URL || ''}/api/deudas');
+            const res = await axios.get('/api/deudas');
             setDeudas(res.data);
         } catch (error) { console.error(error); }
     };
@@ -21,7 +21,7 @@ const Deudas = () => {
     const handleEliminar = async (id) => {
         if (!window.confirm('¿Eliminar esta deuda y todo su historial?')) return;
         try {
-            await axios.delete(`${import.meta.env.VITE_API_URL || ''}/api/deudas/${id}`);
+            await axios.delete(`/api/deudas/${id}`);
             setDeudas(deudas.filter(d => d.id !== id));
         } catch (error) { console.error(error); }
     };

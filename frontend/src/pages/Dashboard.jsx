@@ -33,16 +33,16 @@ const Dashboard = () => {
         try {
             // Paralelizar llamados al backend para KPIs y tareas
             const [tarRes, finRes, deuRes] = await Promise.all([
-                axios.get('${import.meta.env.VITE_API_URL || ''}/api/tareas/dashboard', { headers: { 'Authorization': `Bearer ${token}` } }),
-                axios.get('${import.meta.env.VITE_API_URL || ''}/api/finanzas/ingresos', { headers: { 'Authorization': `Bearer ${token}` } }),
-                axios.get('${import.meta.env.VITE_API_URL || ''}/api/deudas', { headers: { 'Authorization': `Bearer ${token}` } })
+                axios.get('/api/tareas/dashboard', { headers: { 'Authorization': `Bearer ${token}` } }),
+                axios.get('/api/finanzas/ingresos', { headers: { 'Authorization': `Bearer ${token}` } }),
+                axios.get('/api/deudas', { headers: { 'Authorization': `Bearer ${token}` } })
             ]);
             
             // También ocupo egresos para el balance
-            const egRes = await axios.get('${import.meta.env.VITE_API_URL || ''}/api/finanzas/egresos', { headers: { 'Authorization': `Bearer ${token}` } });
+            const egRes = await axios.get('/api/finanzas/egresos', { headers: { 'Authorization': `Bearer ${token}` } });
 
             // Empresas
-            const empRes = await axios.get('${import.meta.env.VITE_API_URL || ''}/api/empresas', { headers: { 'Authorization': `Bearer ${token}` } });
+            const empRes = await axios.get('/api/empresas', { headers: { 'Authorization': `Bearer ${token}` } });
 
             setTasks(tarRes.data);
             
@@ -98,7 +98,7 @@ const Dashboard = () => {
         setTasks(prev => prev.filter(t => t.id !== id));
         const token = localStorage.getItem('token');
         try {
-            await axios.patch(`${import.meta.env.VITE_API_URL || ''}/api/tareas/${id}/estado`, {}, {
+            await axios.patch(`/api/tareas/${id}/estado`, {}, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
         } catch (error) {
@@ -115,7 +115,7 @@ const Dashboard = () => {
         setTasks(prev => prev.filter(t => t.id !== id));
         const token = localStorage.getItem('token');
         try {
-            await axios.delete(`${import.meta.env.VITE_API_URL || ''}/api/tareas/${id}`, {
+            await axios.delete(`/api/tareas/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
         } catch (error) {
@@ -213,7 +213,7 @@ const Dashboard = () => {
             setEgresosData(prev => prev.map(e => e.id === id ? toggle(e) : e));
         }
         try {
-            await axios.patch(`${import.meta.env.VITE_API_URL || ''}/api/finanzas/${tipo}s/${id}/estado`);
+            await axios.patch(`/api/finanzas/${tipo}s/${id}/estado`);
         } catch (error) {
             console.error(error);
             if (tipo === 'ingreso') {
@@ -235,7 +235,7 @@ const Dashboard = () => {
         }
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`${import.meta.env.VITE_API_URL || ''}/api/finanzas/${tipo}s/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+            await axios.delete(`/api/finanzas/${tipo}s/${id}`, { headers: { Authorization: `Bearer ${token}` } });
         } catch (err) {
             console.error(err);
             alert('No se pudo eliminar. Recarga la página.');

@@ -4,7 +4,7 @@ import axios from 'axios';
 const TaskCard = ({ task, onCompleted }) => {
     const handleComplete = async () => {
         try {
-            await axios.patch(`${import.meta.env.VITE_API_URL || ''}/api/tareas/${task.id}/estado`);
+            await axios.patch(`/api/tareas/${task.id}/estado`);
             onCompleted(task.id);
         } catch (err) { console.error(err); }
     };

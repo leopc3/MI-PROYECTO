@@ -9,14 +9,14 @@ const AjusteDeudaModal = ({ deuda, onClose, onSaved }) => {
 
     useEffect(() => {
         if (deuda.mode === 'historial') {
-            axios.get(`${import.meta.env.VITE_API_URL || ''}/api/deudas/${deuda.id}/historial`).then(res => setHistorial(res.data));
+            axios.get(`/api/deudas/${deuda.id}/historial`).then(res => setHistorial(res.data));
         }
     }, [deuda]);
 
     const handleAjuste = async (e) => {
         e.preventDefault();
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL || ''}/api/deudas/${deuda.id}/ajuste`, { tipo, monto, observacion: obs });
+            await axios.post(`/api/deudas/${deuda.id}/ajuste`, { tipo, monto, observacion: obs });
             onSaved();
             onClose();
         } catch (error) { console.error(error); }

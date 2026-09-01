@@ -16,8 +16,8 @@ const Proyectos = () => {
         const token = localStorage.getItem('token');
         try {
             const [proyectosRes, empresasRes] = await Promise.all([
-                axios.get('${import.meta.env.VITE_API_URL || ''}/api/proyectos', { headers: { 'Authorization': `Bearer ${token}` } }),
-                axios.get('${import.meta.env.VITE_API_URL || ''}/api/empresas', { headers: { 'Authorization': `Bearer ${token}` } })
+                axios.get('/api/proyectos', { headers: { 'Authorization': `Bearer ${token}` } }),
+                axios.get('/api/empresas', { headers: { 'Authorization': `Bearer ${token}` } })
             ]);
             setProyectos(proyectosRes.data);
             setEmpresas(empresasRes.data);
@@ -30,7 +30,7 @@ const Proyectos = () => {
         if (!window.confirm('¿Eliminar este proyecto y todas sus tareas?')) return;
         const token = localStorage.getItem('token');
         try {
-            await axios.delete(`${import.meta.env.VITE_API_URL || ''}/api/proyectos/${id}`, {
+            await axios.delete(`/api/proyectos/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setProyectos(proyectos.filter(p => p.id !== id));

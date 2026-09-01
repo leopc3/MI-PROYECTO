@@ -20,7 +20,7 @@ const Finanzas = () => {
         const token = localStorage.getItem('token');
         try {
             const params = tab === 'ingresos' && filtroEmpresa ? `?empresa_id=${filtroEmpresa}` : '';
-            const res = await axios.get(`${import.meta.env.VITE_API_URL || ''}/api/finanzas/${tab}${params}`, {
+            const res = await axios.get(`/api/finanzas/${tab}${params}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setData(res.data);
@@ -29,7 +29,7 @@ const Finanzas = () => {
 
     const fetchEmpresas = async () => {
         try {
-            const res = await axios.get('${import.meta.env.VITE_API_URL || ''}/api/empresas');
+            const res = await axios.get('/api/empresas');
             setEmpresas(res.data);
         } catch (err) { console.error(err); }
     };
@@ -60,11 +60,11 @@ const Finanzas = () => {
         try {
             const token = localStorage.getItem('token');
             if (eliminarSerie) {
-                await axios.delete(`${import.meta.env.VITE_API_URL || ''}/api/finanzas/${tab}/${id}/serie`, {
+                await axios.delete(`/api/finanzas/${tab}/${id}/serie`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             } else {
-                await axios.delete(`${import.meta.env.VITE_API_URL || ''}/api/finanzas/${tab}/${id}`, {
+                await axios.delete(`/api/finanzas/${tab}/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
             }
@@ -75,7 +75,7 @@ const Finanzas = () => {
 
     const handleToggleEstado = async (id, tipo) => {
         try {
-            await axios.patch(`${import.meta.env.VITE_API_URL || ''}/api/finanzas/${tipo}s/${id}/estado`);
+            await axios.patch(`/api/finanzas/${tipo}s/${id}/estado`);
             fetchData();
         } catch (error) { console.error(error); }
     };

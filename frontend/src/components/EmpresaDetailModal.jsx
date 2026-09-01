@@ -14,7 +14,7 @@ const EmpresaDetailModal = ({ empresa, onClose, onSaved }) => {
         const fetchProyectos = async () => {
             const token = localStorage.getItem('token');
             try {
-                const res = await axios.get('${import.meta.env.VITE_API_URL || ''}/api/proyectos', {
+                const res = await axios.get('/api/proyectos', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 setProyectos(res.data.filter(p => p.empresa_id === empresa.id));
@@ -27,7 +27,7 @@ const EmpresaDetailModal = ({ empresa, onClose, onSaved }) => {
         setSaving(true);
         const token = localStorage.getItem('token');
         try {
-            await axios.put(`${import.meta.env.VITE_API_URL || ''}/api/empresas/${empresa.id}`, {
+            await axios.put(`/api/empresas/${empresa.id}`, {
                 nombre: empresa.nombre,
                 notas_ideas: notas
             }, { headers: { 'Authorization': `Bearer ${token}` } });

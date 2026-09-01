@@ -20,7 +20,7 @@ const EditFinanzaModal = ({ item, tipo, onClose, onSaved }) => {
 
     useEffect(() => {
         if (isIng) {
-            axios.get('${import.meta.env.VITE_API_URL || ''}/api/empresas').then(res => setEmpresas(res.data));
+            axios.get('/api/empresas').then(res => setEmpresas(res.data));
         }
     }, [tipo]);
 
@@ -33,8 +33,8 @@ const EditFinanzaModal = ({ item, tipo, onClose, onSaved }) => {
             if (actualizarSerie && esRecurrente) {
                 // Actualizar este mes + todos los futuros
                 const endpoint = isIng
-                    ? `${import.meta.env.VITE_API_URL || ''}/api/finanzas/ingresos/${item.id}/serie`
-                    : `${import.meta.env.VITE_API_URL || ''}/api/finanzas/egresos/${item.id}/serie`;
+                    ? `/api/finanzas/ingresos/${item.id}/serie`
+                    : `/api/finanzas/egresos/${item.id}/serie`;
 
                 const body = isIng
                     ? { empresa_id: formData.empresa_id, monto: formData.monto, moneda: formData.moneda, observacion: formData.observacion }
@@ -46,7 +46,7 @@ const EditFinanzaModal = ({ item, tipo, onClose, onSaved }) => {
             } else {
                 // Actualizar solo este mes
                 if (isIng) {
-                    await axios.put(`${import.meta.env.VITE_API_URL || ''}/api/finanzas/ingresos/${item.id}`, {
+                    await axios.put(`/api/finanzas/ingresos/${item.id}`, {
                         empresa_id: formData.empresa_id,
                         monto: formData.monto,
                         moneda: formData.moneda,
@@ -54,7 +54,7 @@ const EditFinanzaModal = ({ item, tipo, onClose, onSaved }) => {
                         observacion: formData.observacion,
                     }, { headers: { Authorization: `Bearer ${token}` } });
                 } else {
-                    await axios.put(`${import.meta.env.VITE_API_URL || ''}/api/finanzas/egresos/${item.id}`, {
+                    await axios.put(`/api/finanzas/egresos/${item.id}`, {
                         monto: formData.monto,
                         moneda: formData.moneda,
                         fecha_pago: formData.fecha,

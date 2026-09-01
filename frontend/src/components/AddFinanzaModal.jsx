@@ -9,7 +9,7 @@ const AddFinanzaModal = ({ tab, onClose, onSaved }) => {
 
     useEffect(() => {
         if (tab === 'ingresos') {
-            axios.get('${import.meta.env.VITE_API_URL || ''}/api/empresas').then(res => setEmpresas(res.data));
+            axios.get('/api/empresas').then(res => setEmpresas(res.data));
         }
     }, [tab]);
 
@@ -34,7 +34,7 @@ const AddFinanzaModal = ({ tab, onClose, onSaved }) => {
             };
 
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL || ''}${endpoint}`, payload);
+            await axios.post(`${endpoint}`, payload);
             onSaved();
             onClose();
         } catch (error) { console.error(error); }
