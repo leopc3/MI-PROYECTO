@@ -13,7 +13,7 @@ const EditTaskModal = ({ tarea, onClose, onSaved }) => {
         if (proyectosLoaded) return;
         const token = localStorage.getItem('token');
         try {
-            const res = await axios.get('http://localhost:5000/api/proyectos', {
+            const res = await axios.get('${import.meta.env.VITE_API_URL || ''}/api/proyectos', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             setProyectos(res.data);
@@ -29,7 +29,7 @@ const EditTaskModal = ({ tarea, onClose, onSaved }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axios.put(`http://localhost:5000/api/tareas/${tarea.id}`, {
+            await axios.put(`${import.meta.env.VITE_API_URL || ''}/api/tareas/${tarea.id}`, {
                 titulo,
                 fecha_asignada: fecha,
                 observacion: obs,

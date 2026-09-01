@@ -16,10 +16,10 @@ const Historial = () => {
             try {
                 // ← FIX CRÍTICO: usa /historial, no /dashboard
                 const [tasksRes, empRes] = await Promise.all([
-                    axios.get('http://localhost:5000/api/tareas/historial', {
+                    axios.get('${import.meta.env.VITE_API_URL || ''}/api/tareas/historial', {
                         headers: { 'Authorization': `Bearer ${token}` }
                     }),
-                    axios.get('http://localhost:5000/api/empresas', {
+                    axios.get('${import.meta.env.VITE_API_URL || ''}/api/empresas', {
                         headers: { 'Authorization': `Bearer ${token}` }
                     })
                 ]);

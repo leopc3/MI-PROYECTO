@@ -10,7 +10,7 @@ const AddDeudaModal = ({ onClose, onSaved }) => {
     const [saving, setSaving] = useState(false);
 
     useEffect(() => {
-        axios.get('http://localhost:5000/api/empresas')
+        axios.get('${import.meta.env.VITE_API_URL || ''}/api/empresas')
             .then(res => setEmpresas(res.data))
             .catch(err => console.error(err));
     }, []);
@@ -19,7 +19,7 @@ const AddDeudaModal = ({ onClose, onSaved }) => {
         e.preventDefault();
         setSaving(true);
         try {
-            await axios.post('http://localhost:5000/api/deudas', {
+            await axios.post('${import.meta.env.VITE_API_URL || ''}/api/deudas', {
                 concepto,
                 monto_total: monto,
                 observacion,

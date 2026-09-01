@@ -19,9 +19,9 @@ const GlobalSearchModal = ({ onClose }) => {
             try {
                 // Para simplificar, buscamos todo en paralelo. (En apps muy pesadas habría un endpoint unificado o búsqueda indexada).
                 const [tarRes, proyRes, empRes] = await Promise.all([
-                    axios.get('http://localhost:5000/api/tareas/dashboard', { headers: { 'Authorization': `Bearer ${token}` } }),
-                    axios.get('http://localhost:5000/api/proyectos', { headers: { 'Authorization': `Bearer ${token}` } }),
-                    axios.get('http://localhost:5000/api/empresas', { headers: { 'Authorization': `Bearer ${token}` } })
+                    axios.get('${import.meta.env.VITE_API_URL || ''}/api/tareas/dashboard', { headers: { 'Authorization': `Bearer ${token}` } }),
+                    axios.get('${import.meta.env.VITE_API_URL || ''}/api/proyectos', { headers: { 'Authorization': `Bearer ${token}` } }),
+                    axios.get('${import.meta.env.VITE_API_URL || ''}/api/empresas', { headers: { 'Authorization': `Bearer ${token}` } })
                 ]);
 
                 const q = query.toLowerCase();

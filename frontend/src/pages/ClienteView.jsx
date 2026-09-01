@@ -21,7 +21,7 @@ const ClienteView = () => {
 
     const loadData = async () => {
         try {
-            const res = await axios.get(`http://localhost:5000/api/proyectos/enlace/${uuid}`);
+            const res = await axios.get(`${import.meta.env.VITE_API_URL || ''}/api/proyectos/enlace/${uuid}`);
             setProyecto(res.data.proyecto);
             setTareas(res.data.tareas.sort((a, b) => new Date(a.fecha_asignada) - new Date(b.fecha_asignada)));
         } catch (err) { console.error("Enlace no válido"); }
@@ -32,7 +32,7 @@ const ClienteView = () => {
     const handleAddTask = async (e) => {
         e.preventDefault();
         try {
-            await axios.post('http://localhost:5000/api/tareas', {
+            await axios.post('${import.meta.env.VITE_API_URL || ''}/api/tareas', {
                 proyecto_id: proyecto.id,
                 titulo: nuevaTarea.titulo,
                 fecha_asignada: nuevaTarea.fecha,
@@ -47,7 +47,7 @@ const ClienteView = () => {
     const handleEditTask = async (e) => {
         e.preventDefault();
         try {
-            await axios.put(`http://localhost:5000/api/tareas/${editando.id}`, {
+            await axios.put(`${import.meta.env.VITE_API_URL || ''}/api/tareas/${editando.id}`, {
                 titulo: editando.titulo,
                 observacion: editando.observacion,
                 fecha_asignada: editando.fecha_asignada,
@@ -62,14 +62,14 @@ const ClienteView = () => {
             alert('El proyecto no está activo. No puedes modificar tareas.');
             return;
         }
-        await axios.patch(`http://localhost:5000/api/tareas/${id}/estado`);
+        await axios.patch(`${import.meta.env.VITE_API_URL || ''}/api/tareas/${id}/estado`);
         loadData();
     };
 
     const handleEliminarTarea = async (id) => {
         if (!window.confirm('¿Eliminar esta petición? Esta acción no se puede deshacer.')) return;
         try {
-            await axios.delete(`http://localhost:5000/api/tareas/${id}`);
+            await axios.delete(`${import.meta.env.VITE_API_URL || ''}/api/tareas/${id}`);
             // Optimista: quitar de la lista sin recargar
             setTareas(prev => prev.filter(t => t.id !== id));
         } catch (err) {

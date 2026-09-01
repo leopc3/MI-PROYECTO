@@ -22,7 +22,7 @@ const BottomNav = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
       try {
-        const res = await axios.get('http://localhost:5000/api/tareas/dashboard', { headers: { 'Authorization': `Bearer ${token}` } });
+        const res = await axios.get('${import.meta.env.VITE_API_URL || ''}/api/tareas/dashboard', { headers: { 'Authorization': `Bearer ${token}` } });
         const hoyStr = new Date().toISOString().split('T')[0];
         const count = res.data.filter(t => t.fecha_asignada?.split('T')[0] < hoyStr).length;
         setVencidas(count);

@@ -37,7 +37,7 @@ const EditProyectoModal = ({ proyecto, onClose, onSaved }) => {
         const token = localStorage.getItem('token');
         try {
             const res = await axios.put(
-                `http://localhost:5000/api/proyectos/actualizar/${proyecto.id}`,
+                `${import.meta.env.VITE_API_URL || ''}/api/proyectos/actualizar/${proyecto.id}`,
                 {
                     nombre,
                     observacion,
@@ -72,13 +72,13 @@ const EditProyectoModal = ({ proyecto, onClose, onSaved }) => {
         try {
             // 1. Guardar primero los días actualizados
             await axios.put(
-                `http://localhost:5000/api/proyectos/actualizar/${proyecto.id}`,
+                `${import.meta.env.VITE_API_URL || ''}/api/proyectos/actualizar/${proyecto.id}`,
                 { nombre, observacion, estado, observacion_estado: observacionEstado, dias_recurrentes: diasRecurrentes },
                 { headers: { 'Authorization': `Bearer ${token}` } }
             );
             // 2. Regenerar tareas
             const res = await axios.post(
-                `http://localhost:5000/api/proyectos/${proyecto.id}/regenerar-tareas`,
+                `${import.meta.env.VITE_API_URL || ''}/api/proyectos/${proyecto.id}/regenerar-tareas`,
                 {},
                 { headers: { 'Authorization': `Bearer ${token}` } }
             );

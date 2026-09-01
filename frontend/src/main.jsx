@@ -7,9 +7,9 @@ import App from './App'
 // Interceptor Global de Red: Permite que el sistema mute mágicamente 
 // de "localhost:5000" a tu entorno de Producción (HestiaCP) automáticamente.
 axios.interceptors.request.use(config => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    if (config.url && config.url.startsWith('http://localhost:5000')) {
-        config.url = config.url.replace('http://localhost:5000', apiUrl);
+    const apiUrl = import.meta.env.VITE_API_URL || '${import.meta.env.VITE_API_URL || ''}';
+    if (config.url && config.url.startsWith('${import.meta.env.VITE_API_URL || ''}')) {
+        config.url = config.url.replace('${import.meta.env.VITE_API_URL || ''}', apiUrl);
     }
     return config;
 });

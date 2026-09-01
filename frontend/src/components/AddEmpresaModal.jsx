@@ -17,13 +17,13 @@ const AddEmpresaModal = ({ empresa, onClose, onEmpresaGuardada }) => {
             let res;
             if (isEdit) {
                 res = await axios.put(
-                    `http://localhost:5000/api/empresas/${empresa.id}`,
+                    `${import.meta.env.VITE_API_URL || ''}/api/empresas/${empresa.id}`,
                     { nombre, notas_ideas: notas },
                     { headers: { 'Authorization': `Bearer ${token}` } }
                 );
             } else {
                 res = await axios.post(
-                    'http://localhost:5000/api/empresas',
+                    '${import.meta.env.VITE_API_URL || ''}/api/empresas',
                     { nombre, notas_ideas: notas },
                     { headers: { 'Authorization': `Bearer ${token}` } }
                 );
