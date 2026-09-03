@@ -16,7 +16,8 @@ const Dashboard = () => {
     const [tasks, setTasks] = useState([]);
     const [ingresosData, setIngresosData] = useState([]);
     const [egresosData, setEgresosData] = useState([]);
-    const [kpiData, setKpiData] = useState({ ingresosBOB: 0, ingresosUSD: 0, egresos: 0, deuda: 0, egresosPendientes: 0, totalEmpresas: 0 });
+    const [totalDeuda, setTotalDeuda] = useState(0);
+    const [totalEmpresas, setTotalEmpresas] = useState(0);
     const [loading, setLoading] = useState(true);
     const [viendoRetrasados, setViendoRetrasados] = useState(false);
     
@@ -27,66 +28,64 @@ const Dashboard = () => {
     const [showCobroModal, setShowCobroModal] = useState(false);
     const [showPagoModal, setShowPagoModal] = useState(false);
 
+    // KPIs calculados en tiempo real (se descuentan y actualizan inmediatamente)
+    const kpiData = useMemo(() => {
+        const mesActual = new Date().getMonth();
+        const añoActual = new Date().getFullYear();
+
+        const ingPendBOB = ingresosData
+            .filter(i => {
+                const f = new Date(i.fecha_estimada);
+                return i.estado !== 'pagado' && i.moneda !== 'USD'
+                    && f.getMonth() === mesActual && f.getFullYear() === añoActual;
+            })
+            .reduce((acc, curr) => acc + parseFloat(curr.monto || 0), 0);
+
+        const ingPendUSD = ingresosData
+            .filter(i => {
+                const f = new Date(i.fecha_estimada);
+                return i.estado !== 'pagado' && i.moneda === 'USD'
+                    && f.getMonth() === mesActual && f.getFullYear() === añoActual;
+            })
+            .reduce((acc, curr) => acc + parseFloat(curr.monto || 0), 0);
+
+        const egPendientesMes = egresosData
+            .filter(e => {
+                const f = new Date(e.fecha_pago);
+                return f.getMonth() === mesActual && f.getFullYear() === añoActual && e.estado !== 'pagado';
+            })
+            .reduce((acc, curr) => acc + parseFloat(curr.monto || 0), 0);
+
+        return {
+            ingresosBOB: ingPendBOB,
+            ingresosUSD: ingPendUSD,
+            egresosPendientes: egPendientesMes,
+            deuda: totalDeuda,
+            totalEmpresas: totalEmpresas,
+        };
+    }, [ingresosData, egresosData, totalDeuda, totalEmpresas]);
+
     const fetchData = async () => {
         setLoading(true);
         const token = localStorage.getItem('token');
         try {
-            // Paralelizar llamados al backend para KPIs y tareas
-            const [tarRes, finRes, deuRes] = await Promise.all([
+            const [tarRes, finRes, deuRes, egRes, empRes] = await Promise.all([
                 axios.get('/api/tareas/dashboard', { headers: { 'Authorization': `Bearer ${token}` } }),
                 axios.get('/api/finanzas/ingresos', { headers: { 'Authorization': `Bearer ${token}` } }),
-                axios.get('/api/deudas', { headers: { 'Authorization': `Bearer ${token}` } })
+                axios.get('/api/deudas', { headers: { 'Authorization': `Bearer ${token}` } }),
+                axios.get('/api/finanzas/egresos', { headers: { 'Authorization': `Bearer ${token}` } }),
+                axios.get('/api/empresas', { headers: { 'Authorization': `Bearer ${token}` } })
             ]);
-            
-            // También ocupo egresos para el balance
-            const egRes = await axios.get('/api/finanzas/egresos', { headers: { 'Authorization': `Bearer ${token}` } });
-
-            // Empresas
-            const empRes = await axios.get('/api/empresas', { headers: { 'Authorization': `Bearer ${token}` } });
 
             setTasks(tarRes.data);
-            
-            // Calcular KPIs
-            const mesActual = new Date().getMonth();
-            const añoActual = new Date().getFullYear();
-
-            // Por cobrar en BOB — solo mes actual, pendientes
-            const ingPendBOB = finRes.data
-                .filter(i => {
-                    const f = new Date(i.fecha_estimada);
-                    return i.estado !== 'pagado' && i.moneda !== 'USD'
-                        && f.getMonth() === mesActual && f.getFullYear() === añoActual;
-                })
-                .reduce((acc, curr) => acc + parseFloat(curr.monto), 0);
-
-            // Por cobrar en USD — solo mes actual, pendientes
-            const ingPendUSD = finRes.data
-                .filter(i => {
-                    const f = new Date(i.fecha_estimada);
-                    return i.estado !== 'pagado' && i.moneda === 'USD'
-                        && f.getMonth() === mesActual && f.getFullYear() === añoActual;
-                })
-                .reduce((acc, curr) => acc + parseFloat(curr.monto), 0);
-
-            const egPendientesMes = egRes.data
-                .filter(e => new Date(e.fecha_pago).getMonth() === mesActual && new Date(e.fecha_pago).getFullYear() === añoActual && e.estado !== 'pagado')
-                .reduce((acc, curr) => acc + parseFloat(curr.monto), 0);
-
-            const deudaTotal = deuRes.data.reduce((acc, curr) => acc + parseFloat(curr.monto_total), 0);
-
             setIngresosData(finRes.data);
             setEgresosData(egRes.data);
-            setKpiData({
-                ingresosBOB: ingPendBOB,
-                ingresosUSD: ingPendUSD,
-                egresos: egRes.data.filter(e => new Date(e.fecha_pago).getMonth() === mesActual).reduce((a, c) => a + parseFloat(c.monto), 0),
-                deuda: deudaTotal,
-                egresosPendientes: egPendientesMes,
-                totalEmpresas: empRes.data.length,
-            });
+            setTotalDeuda(deuRes.data.reduce((acc, curr) => acc + parseFloat(curr.monto_total || 0), 0));
+            setTotalEmpresas(empRes.data.length);
         } catch (error) { console.error('Error cargando el dashboard:', error); }
         setLoading(false);
     };
+
 
     useEffect(() => { fetchData(); }, []);
     useEffect(() => { setViendoRetrasados(false); }, [selectedDate]);
@@ -136,8 +135,9 @@ const Dashboard = () => {
     const hoyStr = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-${String(hoy.getDate()).padStart(2,'0')}`;
     const selectDateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth()+1).padStart(2,'0')}-${String(selectedDate.getDate()).padStart(2,'0')}`;
     const tareasDelDia = tasks.filter(t => t.fecha_asignada?.split('T')[0] === selectDateStr);
-    const ingresosDelDia = ingresosData.filter(i => i.fecha_estimada?.split('T')[0] === selectDateStr);
-    const egresosDelDia = egresosData.filter(e => e.fecha_pago?.split('T')[0] === selectDateStr);
+    const ingresosDelDia = ingresosData.filter(i => i.fecha_estimada?.split('T')[0] === selectDateStr && i.estado !== 'pagado');
+    const egresosDelDia = egresosData.filter(e => e.fecha_pago?.split('T')[0] === selectDateStr && e.estado !== 'pagado');
+
 
     const actividadesDelDia = [
         ...tareasDelDia.map(t => ({ ...t, tipoItem: 'tarea' })),
@@ -476,12 +476,17 @@ const Dashboard = () => {
                                                         </div>
                                                     </div>
 
-                                                    {isTarea && (
+                                                    {isTarea ? (
                                                         <div className="flex flex-col gap-1 shrink-0">
                                                             <button onClick={() => setEditTask(actItem)} className="p-2 bg-gray-50 rounded-xl text-gray-400 active:bg-gray-200 transition-colors"><PenSquare size={16} /></button>
                                                             <button onClick={() => handleEliminar(actItem.id)} className="p-2 bg-red-50 rounded-xl text-red-500 active:bg-red-200 transition-colors"><Trash2 size={16} /></button>
                                                         </div>
+                                                    ) : (
+                                                        <div className="flex flex-col gap-1 shrink-0">
+                                                            <button onClick={() => handleEliminarFinanza(actItem.id, actItem.tipoItem)} className="p-2 bg-red-50 rounded-xl text-red-400 active:bg-red-200 transition-colors" title="Eliminar"><Trash2 size={16} /></button>
+                                                        </div>
                                                     )}
+
                                                 </div>
                                             );
                                         })}
@@ -606,18 +611,7 @@ const Dashboard = () => {
                     onClose={() => setShowCobroModal(false)}
                     onSaved={(nuevoItem) => {
                         setShowCobroModal(false);
-                        // Agregar al estado local inmediatamente
                         setIngresosData(prev => [...prev, nuevoItem]);
-                        // Actualizar KPI si es del mes actual y está pendiente
-                        const hoyD = new Date();
-                        const itemFecha = new Date(nuevoItem.fecha_estimada + 'T00:00:00');
-                        if (itemFecha.getMonth() === hoyD.getMonth() && itemFecha.getFullYear() === hoyD.getFullYear()) {
-                            setKpiData(prev => ({
-                                ...prev,
-                                ingresosBOB: nuevoItem.moneda !== 'USD' ? prev.ingresosBOB + parseFloat(nuevoItem.monto) : prev.ingresosBOB,
-                                ingresosUSD: nuevoItem.moneda === 'USD' ? prev.ingresosUSD + parseFloat(nuevoItem.monto) : prev.ingresosUSD,
-                            }));
-                        }
                     }}
                 />
             )}
@@ -628,17 +622,7 @@ const Dashboard = () => {
                     onClose={() => setShowPagoModal(false)}
                     onSaved={(nuevoItem) => {
                         setShowPagoModal(false);
-                        // Agregar al estado local inmediatamente
                         setEgresosData(prev => [...prev, nuevoItem]);
-                        // Actualizar KPI si es del mes actual
-                        const hoyD = new Date();
-                        const itemFecha = new Date(nuevoItem.fecha_pago + 'T00:00:00');
-                        if (itemFecha.getMonth() === hoyD.getMonth() && itemFecha.getFullYear() === hoyD.getFullYear()) {
-                            setKpiData(prev => ({
-                                ...prev,
-                                egresosPendientes: prev.egresosPendientes + parseFloat(nuevoItem.monto),
-                            }));
-                        }
                     }}
                 />
             )}
