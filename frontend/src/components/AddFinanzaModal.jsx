@@ -16,18 +16,26 @@ const AddFinanzaModal = ({ tab, onClose, onSaved }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const endpoint = tab === 'ingresos' ? '/api/finanzas/ingresos' : '/api/finanzas/egresos';
+
+        const rawMonto = String(formData.monto || '').replace(',', '.').trim();
+        const montoFinal = parseFloat(rawMonto);
+        if (isNaN(montoFinal) || montoFinal <= 0) {
+            alert('Por favor ingresa un monto válido.');
+            return;
+        }
+
         const payload = tab === 'ingresos'
             ? {
                 empresa_id: formData.empresa_id,
-                monto: formData.monto,
+                monto: montoFinal,
                 moneda: formData.moneda,
                 fecha_estimada: formData.fecha,
                 observacion: formData.observacion,
                 es_recurrente_mensual: formData.recurrente
             }
             : {
-                monto: formData.monto,
-                moneda: formData.moneda,        // ← ahora egresos también tiene moneda
+                monto: montoFinal,
+                moneda: formData.moneda,
                 fecha_pago: formData.fecha,
                 es_recurrente_mensual: formData.recurrente,
                 observacion: formData.observacion
@@ -39,6 +47,7 @@ const AddFinanzaModal = ({ tab, onClose, onSaved }) => {
             onClose();
         } catch (error) { console.error(error); }
     };
+
 
     const isIng = tab === 'ingresos';
 
@@ -60,10 +69,9 @@ const AddFinanzaModal = ({ tab, onClose, onSaved }) => {
 
                 <div className="flex gap-2">
                     <input
-                        type="number"
-                        step="any"
-                        placeholder="Monto"
-                        required
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="Monto (ej: 150.00)"
                         className="flex-1 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-brand"
                         onChange={e => setFormData({ ...formData, monto: e.target.value })}
                     />

@@ -105,10 +105,9 @@ const EditFinanzaModal = ({ item, tipo, onClose, onSaved }) => {
 
                 <div className="flex gap-2">
                     <input
-                        type="number"
-                        step="any"
-                        placeholder="Monto"
-                        required
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="Monto (ej: 150.00)"
                         value={formData.monto}
                         onChange={e => setFormData({ ...formData, monto: e.target.value })}
                         className="flex-1 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-brand"
