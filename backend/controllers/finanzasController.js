@@ -1,5 +1,15 @@
 const pool = require('../db/database');
 
+// Helper para limpiar y formatear montos (soporta comas decimales '150,00' -> 150.00)
+const parseMonto = (val) => {
+    if (val === undefined || val === null || val === '') return 0;
+    if (typeof val === 'string') {
+        val = val.replace(',', '.').trim();
+    }
+    const num = parseFloat(val);
+    return isNaN(num) ? 0 : num;
+};
+
 // ─────────────────────────────────────────
 // INGRESOS
 // ─────────────────────────────────────────
@@ -28,19 +38,20 @@ const obtenerIngresos = async (req, res) => {
 const crearIngreso = async (req, res) => {
     // empresa_id para cobros normales, empresa_nombre para cobros rápidos
     const { empresa_id, empresa_nombre, monto, moneda, fecha_estimada, observacion, es_recurrente_mensual } = req.body;
+    const montoLimpio = parseMonto(monto);
     try {
         // Si no hay empresa_id, guardar como cobro rápido con nombre libre
         if (!empresa_id) {
             const result = await pool.query(
                 'INSERT INTO ingresos (empresa_nombre_libre, monto, moneda, fecha_estimada, observacion, es_recurrente_mensual) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-                [empresa_nombre || 'Cobro rápido', monto, moneda || 'BOB', fecha_estimada, observacion, false]
+                [empresa_nombre || 'Cobro rápido', montoLimpio, moneda || 'BOB', fecha_estimada, observacion, false]
             );
             return res.json(result.rows[0]);
         }
 
         const result = await pool.query(
             'INSERT INTO ingresos (empresa_id, monto, moneda, fecha_estimada, observacion, es_recurrente_mensual) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-            [empresa_id, monto, moneda || 'BOB', fecha_estimada, observacion, es_recurrente_mensual || false]
+            [empresa_id, montoLimpio, moneda || 'BOB', fecha_estimada, observacion, es_recurrente_mensual || false]
         );
 
         if (es_recurrente_mensual) {
@@ -50,10 +61,11 @@ const crearIngreso = async (req, res) => {
                 nuevaFecha.setMonth(nuevaFecha.getMonth() + i);
                 await pool.query(
                     'INSERT INTO ingresos (empresa_id, monto, moneda, fecha_estimada, observacion, es_recurrente_mensual) VALUES ($1, $2, $3, $4, $5, $6)',
-                    [empresa_id, monto, moneda || 'BOB', nuevaFecha.toISOString().split('T')[0], observacion, true]
+                    [empresa_id, montoLimpio, moneda || 'BOB', nuevaFecha.toISOString().split('T')[0], observacion, true]
                 );
             }
         }
+
 
         res.json(result.rows[0]);
     } catch (error) {
@@ -67,7 +79,7 @@ const actualizarIngreso = async (req, res) => {
     try {
         const result = await pool.query(
             'UPDATE ingresos SET empresa_id=$1, monto=$2, moneda=$3, fecha_estimada=$4, observacion=$5 WHERE id=$6 RETURNING *',
-            [empresa_id, monto, moneda || 'BOB', fecha_estimada, observacion, id]
+            [empresa_id, parseMonto(monto), moneda || 'BOB', fecha_estimada, observacion, id]
         );
         res.json(result.rows[0]);
     } catch (error) {
@@ -113,11 +125,12 @@ const obtenerEgresos = async (req, res) => {
 
 const crearEgreso = async (req, res) => {
     const { monto, fecha_pago, es_recurrente_mensual, observacion, moneda } = req.body;
+    const montoLimpio = parseMonto(monto);
     try {
         // Insertar el primer egreso
         const result = await pool.query(
             'INSERT INTO egresos (monto, fecha_pago, es_recurrente_mensual, observacion, moneda) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [monto, fecha_pago, es_recurrente_mensual, observacion, moneda || 'BOB']
+            [montoLimpio, fecha_pago, es_recurrente_mensual, observacion, moneda || 'BOB']
         );
 
         // Si es recurrente, auto-generar los próximos 11 meses (12 en total)
@@ -128,10 +141,11 @@ const crearEgreso = async (req, res) => {
                 nuevaFecha.setMonth(nuevaFecha.getMonth() + i);
                 await pool.query(
                     'INSERT INTO egresos (monto, fecha_pago, es_recurrente_mensual, observacion, moneda) VALUES ($1, $2, $3, $4, $5)',
-                    [monto, nuevaFecha.toISOString().split('T')[0], true, observacion, moneda || 'BOB']
+                    [montoLimpio, nuevaFecha.toISOString().split('T')[0], true, observacion, moneda || 'BOB']
                 );
             }
         }
+
 
         res.json(result.rows[0]);
     } catch (error) {
@@ -145,7 +159,7 @@ const actualizarEgreso = async (req, res) => {
     try {
         const result = await pool.query(
             'UPDATE egresos SET monto=$1, fecha_pago=$2, observacion=$3, moneda=$4 WHERE id=$5 RETURNING *',
-            [monto, fecha_pago, observacion, moneda || 'BOB', id]
+            [parseMonto(monto), fecha_pago, observacion, moneda || 'BOB', id]
         );
         res.json(result.rows[0]);
     } catch (error) {
@@ -184,6 +198,7 @@ const toggleEstadoEgreso = async (req, res) => {
 const actualizarSerieIngreso = async (req, res) => {
     const { id } = req.params;
     const { empresa_id, monto, moneda, observacion } = req.body;
+    const montoLimpio = parseMonto(monto);
     try {
         // 1. Obtener el item actual para saber su fecha y empresa
         const current = await pool.query('SELECT * FROM ingresos WHERE id=$1', [id]);
@@ -193,11 +208,10 @@ const actualizarSerieIngreso = async (req, res) => {
         // 2. Actualizar este registro
         await pool.query(
             'UPDATE ingresos SET empresa_id=$1, monto=$2, moneda=$3, observacion=$4 WHERE id=$5',
-            [empresa_id || item.empresa_id, monto, moneda || 'BOB', observacion, id]
+            [empresa_id || item.empresa_id, montoLimpio, moneda || 'BOB', observacion, id]
         );
 
         // 3. Actualizar TODOS los futuros pendientes de la misma serie
-        // Identificados por: mismo empresa_id, es_recurrente_mensual=true, estado pendiente, fecha >= hoy
         const hoy = new Date().toISOString().split('T')[0];
         const updated = await pool.query(
             `UPDATE ingresos
@@ -207,7 +221,7 @@ const actualizarSerieIngreso = async (req, res) => {
                AND estado='pendiente'
                AND fecha_estimada > $5
              RETURNING id`,
-            [monto, moneda || 'BOB', observacion, empresa_id || item.empresa_id, hoy]
+            [montoLimpio, moneda || 'BOB', observacion, empresa_id || item.empresa_id, hoy]
         );
 
         res.json({ message: 'Serie actualizada', actualizados: updated.rowCount + 1 });
@@ -220,6 +234,7 @@ const actualizarSerieIngreso = async (req, res) => {
 const actualizarSerieEgreso = async (req, res) => {
     const { id } = req.params;
     const { monto, moneda, observacion } = req.body;
+    const montoLimpio = parseMonto(monto);
     try {
         // 1. Obtener item actual
         const current = await pool.query('SELECT * FROM egresos WHERE id=$1', [id]);
@@ -229,10 +244,10 @@ const actualizarSerieEgreso = async (req, res) => {
         // 2. Actualizar este registro
         await pool.query(
             'UPDATE egresos SET monto=$1, moneda=$2, observacion=$3 WHERE id=$4',
-            [monto, moneda || 'BOB', observacion, id]
+            [montoLimpio, moneda || 'BOB', observacion, id]
         );
 
-        // 3. Actualizar todos los futuros pendientes con mismo observacion y recurrente
+        // 3. Actualizar todos los futuros pendientes con misma observación y recurrente
         const hoy = new Date().toISOString().split('T')[0];
         const updated = await pool.query(
             `UPDATE egresos
@@ -242,7 +257,7 @@ const actualizarSerieEgreso = async (req, res) => {
                AND estado='pendiente'
                AND fecha_pago > $5
              RETURNING id`,
-            [monto, moneda || 'BOB', observacion, item.observacion, hoy]
+            [montoLimpio, moneda || 'BOB', observacion, item.observacion, hoy]
         );
 
         res.json({ message: 'Serie actualizada', actualizados: updated.rowCount + 1 });
@@ -250,6 +265,7 @@ const actualizarSerieEgreso = async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 };
+
 
 // ─────────────────────────────────────────
 // ELIMINAR SERIE RECURRENTE

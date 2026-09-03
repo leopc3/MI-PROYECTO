@@ -61,6 +61,7 @@ const AddFinanzaModal = ({ tab, onClose, onSaved }) => {
                 <div className="flex gap-2">
                     <input
                         type="number"
+                        step="any"
                         placeholder="Monto"
                         required
                         className="flex-1 p-3 border rounded-xl outline-none focus:ring-2 focus:ring-brand"

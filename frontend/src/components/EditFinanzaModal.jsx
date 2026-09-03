@@ -14,6 +14,7 @@ const EditFinanzaModal = ({ item, tipo, onClose, onSaved }) => {
     const [actualizarSerie, setActualizarSerie] = useState(false);
     const [saving, setSaving] = useState(false);
     const [resultado, setResultado] = useState(null);
+    const [error, setError] = useState('');
 
     const esRecurrente = item.es_recurrente_mensual;
     const isIng = tipo === 'ingreso';
@@ -28,7 +29,19 @@ const EditFinanzaModal = ({ item, tipo, onClose, onSaved }) => {
         e.preventDefault();
         setSaving(true);
         setResultado(null);
+        setError('');
         const token = localStorage.getItem('token');
+
+        // Limpiar el monto para soportar comas decimales
+        const rawMonto = String(formData.monto || '').replace(',', '.').trim();
+        const montoFinal = parseFloat(rawMonto);
+
+        if (isNaN(montoFinal) || montoFinal <= 0) {
+            setError('Por favor ingresa un monto válido.');
+            setSaving(false);
+            return;
+        }
+
         try {
             if (actualizarSerie && esRecurrente) {
                 // Actualizar este mes + todos los futuros
@@ -37,25 +50,25 @@ const EditFinanzaModal = ({ item, tipo, onClose, onSaved }) => {
                     : `/api/finanzas/egresos/${item.id}/serie`;
 
                 const body = isIng
-                    ? { empresa_id: formData.empresa_id, monto: formData.monto, moneda: formData.moneda, observacion: formData.observacion }
-                    : { monto: formData.monto, moneda: formData.moneda, observacion: formData.observacion };
+                    ? { empresa_id: formData.empresa_id, monto: montoFinal, moneda: formData.moneda, observacion: formData.observacion }
+                    : { monto: montoFinal, moneda: formData.moneda, observacion: formData.observacion };
 
                 const res = await axios.put(endpoint, body, { headers: { Authorization: `Bearer ${token}` } });
                 setResultado(`✅ ${res.data.actualizados} registro(s) actualizado(s)`);
-                setTimeout(() => { onSaved(); onClose(); }, 1200);
+                setTimeout(() => { onSaved(); onClose(); }, 1000);
             } else {
                 // Actualizar solo este mes
                 if (isIng) {
                     await axios.put(`/api/finanzas/ingresos/${item.id}`, {
                         empresa_id: formData.empresa_id,
-                        monto: formData.monto,
+                        monto: montoFinal,
                         moneda: formData.moneda,
                         fecha_estimada: formData.fecha,
                         observacion: formData.observacion,
                     }, { headers: { Authorization: `Bearer ${token}` } });
                 } else {
                     await axios.put(`/api/finanzas/egresos/${item.id}`, {
-                        monto: formData.monto,
+                        monto: montoFinal,
                         moneda: formData.moneda,
                         fecha_pago: formData.fecha,
                         observacion: formData.observacion,
@@ -64,11 +77,13 @@ const EditFinanzaModal = ({ item, tipo, onClose, onSaved }) => {
                 onSaved();
                 onClose();
             }
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            console.error(err);
+            setError(err.response?.data?.error || 'No se pudo actualizar el registro.');
         }
         setSaving(false);
     };
+
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]">
@@ -91,6 +106,7 @@ const EditFinanzaModal = ({ item, tipo, onClose, onSaved }) => {
                 <div className="flex gap-2">
                     <input
                         type="number"
+                        step="any"
                         placeholder="Monto"
                         required
                         value={formData.monto}
@@ -152,9 +168,16 @@ const EditFinanzaModal = ({ item, tipo, onClose, onSaved }) => {
                     </div>
                 )}
 
+                {error && (
+                    <div className="p-3 bg-red-50 text-red-600 rounded-xl text-xs font-bold text-center border border-red-100">
+                        {error}
+                    </div>
+                )}
+
                 {resultado && (
                     <p className="text-sm font-bold text-green-600 text-center">{resultado}</p>
                 )}
+
 
                 <div className="flex gap-2 pt-2">
                     <button type="button" onClick={onClose} className="flex-1 py-3 bg-gray-100 rounded-xl font-bold">
