@@ -8,6 +8,7 @@ const AddDeudaModal = ({ onClose, onSaved }) => {
     const [observacion, setObservacion] = useState('');
     const [empresaId, setEmpresaId] = useState('');
     const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         axios.get('/api/empresas')
@@ -17,21 +18,31 @@ const AddDeudaModal = ({ onClose, onSaved }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        const rawMonto = String(monto || '').replace(/,/g, '.').trim();
+        const montoFinal = parseFloat(rawMonto);
+        if (isNaN(montoFinal) || montoFinal <= 0) {
+            setError('Por favor ingresa un monto válido.');
+            return;
+        }
         setSaving(true);
+        const token = localStorage.getItem('token');
         try {
             await axios.post('/api/deudas', {
                 concepto,
-                monto_total: monto,
+                monto_total: montoFinal,
                 observacion,
                 empresa_id: empresaId || null
-            });
+            }, { headers: { Authorization: `Bearer ${token}` } });
             onSaved();
             onClose();
-        } catch (error) {
-            console.error('Error al crear deuda:', error);
+        } catch (err) {
+            console.error('Error al crear deuda:', err);
+            setError(err.response?.data?.error || 'No se pudo guardar la deuda.');
         }
         setSaving(false);
     };
+
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
@@ -53,11 +64,13 @@ const AddDeudaModal = ({ onClose, onSaved }) => {
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Monto Inicial (Bs.)</label>
                         <input
-                            type="number"
+                            type="text"
+                            inputMode="decimal"
                             required
                             value={monto}
                             onChange={e => setMonto(e.target.value)}
                             className="mt-1 w-full p-3 border rounded-xl focus:ring-2 focus:ring-brand outline-none"
+                            placeholder="Ej: 1500.00"
                         />
                     </div>
 

@@ -8,6 +8,7 @@ import AddTaskModal from '../components/AddTaskModal';
 import EditTaskModal from '../components/EditTaskModal';
 import GlobalSearchModal from '../components/GlobalSearchModal';
 import QuickFinanzaModal from '../components/QuickFinanzaModal';
+import AmortizarDeudaModal from '../components/AmortizarDeudaModal';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -16,10 +17,12 @@ const Dashboard = () => {
     const [tasks, setTasks] = useState([]);
     const [ingresosData, setIngresosData] = useState([]);
     const [egresosData, setEgresosData] = useState([]);
+    const [deudasData, setDeudasData] = useState([]);
     const [totalDeuda, setTotalDeuda] = useState(0);
     const [totalEmpresas, setTotalEmpresas] = useState(0);
     const [loading, setLoading] = useState(true);
     const [viendoRetrasados, setViendoRetrasados] = useState(false);
+    const [showAmortizarDeuda, setShowAmortizarDeuda] = useState(null); // deuda seleccionada para amortizar
     
     // Modals
     const [showTaskModal, setShowTaskModal] = useState(false);
@@ -72,7 +75,7 @@ const Dashboard = () => {
             const [tarRes, finRes, deuRes, egRes, empRes] = await Promise.all([
                 axios.get('/api/tareas/dashboard', { headers: { 'Authorization': `Bearer ${token}` } }),
                 axios.get('/api/finanzas/ingresos', { headers: { 'Authorization': `Bearer ${token}` } }),
-                axios.get('/api/deudas', { headers: { 'Authorization': `Bearer ${token}` } }),
+                axios.get('/api/deudas?estado=activa', { headers: { 'Authorization': `Bearer ${token}` } }),
                 axios.get('/api/finanzas/egresos', { headers: { 'Authorization': `Bearer ${token}` } }),
                 axios.get('/api/empresas', { headers: { 'Authorization': `Bearer ${token}` } })
             ]);
@@ -80,11 +83,14 @@ const Dashboard = () => {
             setTasks(tarRes.data);
             setIngresosData(finRes.data);
             setEgresosData(egRes.data);
-            setTotalDeuda(deuRes.data.reduce((acc, curr) => acc + parseFloat(curr.monto_total || 0), 0));
+            const deudas = deuRes.data;
+            setDeudasData(deudas);
+            setTotalDeuda(deudas.reduce((acc, curr) => acc + parseFloat(curr.monto_total || 0), 0));
             setTotalEmpresas(empRes.data.length);
         } catch (error) { console.error('Error cargando el dashboard:', error); }
         setLoading(false);
     };
+
 
 
     useEffect(() => { fetchData(); }, []);
@@ -206,16 +212,21 @@ const Dashboard = () => {
     })();
 
     const handleToggleFinanza = async (id, tipo) => {
+        const token = localStorage.getItem('token');
         const toggle = (item) => ({ ...item, estado: item.estado === 'pagado' ? 'pendiente' : 'pagado' });
+        // Actualización optimista
         if (tipo === 'ingreso') {
             setIngresosData(prev => prev.map(i => i.id === id ? toggle(i) : i));
         } else {
             setEgresosData(prev => prev.map(e => e.id === id ? toggle(e) : e));
         }
         try {
-            await axios.patch(`/api/finanzas/${tipo}s/${id}/estado`);
+            await axios.patch(`/api/finanzas/${tipo}s/${id}/estado`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
         } catch (error) {
             console.error(error);
+            // Revertir si falla
             if (tipo === 'ingreso') {
                 setIngresosData(prev => prev.map(i => i.id === id ? toggle(i) : i));
             } else {
@@ -542,7 +553,7 @@ const Dashboard = () => {
 
                                                 <div className={`flex-1 min-w-0 py-1 ${isPagado ? 'line-through text-gray-400' : ''}`}>
                                                     <p className={`font-bold leading-tight truncate text-sm ${isVencida ? 'text-red-600' : 'text-gray-800'}`}>
-                                                        {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre}` : `Pago: ${actItem.observacion}`}
+                                                        {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre || actItem.observacion || 'Cobro rápido'}` : `Pago: ${actItem.observacion || 'Pago rápido'}`}
                                                     </p>
                                                     {isTarea && actItem.observacion && (
                                                         <p className="text-[11px] italic text-gray-400 mt-0.5 line-clamp-1">{actItem.observacion}</p>
@@ -593,6 +604,53 @@ const Dashboard = () => {
                     </div>
                 )}
             </div>
+
+            {/* ──── Sección Deudas Activas ──── */}
+            {deudasData.length > 0 && (
+                <div className="mt-4 space-y-3">
+                    <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 px-1">Deudas Activas</h3>
+                    {deudasData.map(deuda => (
+                        <div key={deuda.id} className="bg-white rounded-3xl p-4 shadow-sm border border-orange-100 flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center shrink-0">
+                                <span className="text-orange-500 font-black text-lg">D</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-bold text-sm text-gray-800 truncate">{deuda.concepto}</p>
+                                {deuda.empresa_nombre && <p className="text-xs text-brand truncate">{deuda.empresa_nombre}</p>}
+                                <span className="text-xs font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md inline-block mt-1">
+                                    Pendiente: Bs. {parseFloat(deuda.monto_total).toFixed(2)}
+                                </span>
+                            </div>
+                            <button
+                                onClick={() => setShowAmortizarDeuda(deuda)}
+                                className="bg-brand text-white text-xs font-bold px-3 py-2 rounded-xl shrink-0 active:scale-95 transition-all"
+                            >
+                                Amortizar
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Modal amortizar deuda desde Dashboard */}
+            {showAmortizarDeuda && (
+                <AmortizarDeudaModal
+                    deuda={showAmortizarDeuda}
+                    onClose={() => setShowAmortizarDeuda(null)}
+                    onSaved={(deudaActualizada) => {
+                        setShowAmortizarDeuda(null);
+                        if (deudaActualizada.estado === 'completada') {
+                            // Quitar de la lista inmediatamente
+                            setDeudasData(prev => prev.filter(d => d.id !== deudaActualizada.id));
+                            setTotalDeuda(prev => Math.max(0, prev - parseFloat(deudaActualizada.monto_total || 0)));
+                        } else {
+                            // Actualizar monto
+                            setDeudasData(prev => prev.map(d => d.id === deudaActualizada.id ? { ...d, monto_total: deudaActualizada.monto_total } : d));
+                            setTotalDeuda(prev => prev - (parseFloat(showAmortizarDeuda.monto_total) - parseFloat(deudaActualizada.monto_total)));
+                        }
+                    }}
+                />
+            )}
 
             {/* Modals */}
             {showTaskModal && (

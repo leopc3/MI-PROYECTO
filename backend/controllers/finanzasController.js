@@ -4,11 +4,12 @@ const pool = require('../db/database');
 const parseMonto = (val) => {
     if (val === undefined || val === null || val === '') return 0;
     if (typeof val === 'string') {
-        val = val.replace(',', '.').trim();
+        val = val.replace(/,/g, '.').trim();
     }
     const num = parseFloat(val);
     return isNaN(num) ? 0 : num;
 };
+
 
 // ─────────────────────────────────────────
 // INGRESOS

@@ -5,11 +5,7 @@ const jwt = require('jsonwebtoken');
 const login = async (req, res) => {
     const { email, password } = req.body;
 
-    // Bypass de emergencia temporal para garantizar que no te quedes por fuera
-    if (email === 'admin@ventasya.com' && password === 'admin123') {
-        const token = jwt.sign({ id: 1 }, process.env.JWT_SECRET || 'secret_key', { expiresIn: '7d' });
-        return res.json({ token, user: { id: 1, nombre: 'Admin', email } });
-    }
+
 
     try {
         const result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
@@ -67,13 +63,5 @@ const login = async (req, res) => {
     }
 };
 
-const debugUsers = async (req, res) => {
-    try {
-        const result = await pool.query('SELECT id, nombre, email, password FROM usuarios');
-        res.json({ count: result.rows.length, users: result.rows });
-    } catch (error) {
-        res.json({ error: error.message });
-    }
-};
 
-module.exports = { login, debugUsers };
+module.exports = { login };

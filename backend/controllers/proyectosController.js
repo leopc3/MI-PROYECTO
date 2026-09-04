@@ -58,7 +58,8 @@ const crearProyecto = async (req, res) => {
 const eliminarProyecto = async (req, res) => {
     const { id } = req.params;
     try {
-        // Al eliminar el proyecto, las tareas se eliminan solas por el ON DELETE CASCADE de la BD
+        // Eliminar tareas del proyecto explícitamente (no depender del ON DELETE CASCADE)
+        await pool.query('DELETE FROM tareas WHERE proyecto_id = $1', [id]);
         await pool.query('DELETE FROM proyectos WHERE id = $1', [id]);
         res.json({ message: 'Proyecto y sus tareas eliminados' });
     } catch (error) {
