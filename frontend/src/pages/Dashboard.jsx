@@ -33,29 +33,29 @@ const Dashboard = () => {
 
     // KPIs calculados en tiempo real (se descuentan y actualizan inmediatamente)
     const kpiData = useMemo(() => {
-        const mesActual = new Date().getMonth();
-        const añoActual = new Date().getFullYear();
+        const ahora = new Date();
+        // Incluir: vencidos (meses anteriores) + mes actual. Excluir: futuros.
+        // Calculamos el último día del mes actual para no incluir meses futuros
+        const finMesActual = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 0, 23, 59, 59);
 
         const ingPendBOB = ingresosData
             .filter(i => {
                 const f = new Date(i.fecha_estimada);
-                return i.estado !== 'pagado' && i.moneda !== 'USD'
-                    && f.getMonth() === mesActual && f.getFullYear() === añoActual;
+                return i.estado !== 'pagado' && i.moneda !== 'USD' && f <= finMesActual;
             })
             .reduce((acc, curr) => acc + parseFloat(curr.monto || 0), 0);
 
         const ingPendUSD = ingresosData
             .filter(i => {
                 const f = new Date(i.fecha_estimada);
-                return i.estado !== 'pagado' && i.moneda === 'USD'
-                    && f.getMonth() === mesActual && f.getFullYear() === añoActual;
+                return i.estado !== 'pagado' && i.moneda === 'USD' && f <= finMesActual;
             })
             .reduce((acc, curr) => acc + parseFloat(curr.monto || 0), 0);
 
         const egPendientesMes = egresosData
             .filter(e => {
                 const f = new Date(e.fecha_pago);
-                return f.getMonth() === mesActual && f.getFullYear() === añoActual && e.estado !== 'pagado';
+                return f <= finMesActual && e.estado !== 'pagado';
             })
             .reduce((acc, curr) => acc + parseFloat(curr.monto || 0), 0);
 
@@ -66,6 +66,7 @@ const Dashboard = () => {
             deuda: totalDeuda,
             totalEmpresas: totalEmpresas,
         };
+
     }, [ingresosData, egresosData, totalDeuda, totalEmpresas]);
 
     const fetchData = async () => {
