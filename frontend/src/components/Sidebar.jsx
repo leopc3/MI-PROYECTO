@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Home, Building2, FolderKanban, Wallet, History, CreditCard } from 'lucide-react';
+import ThemeToggle from './ThemeToggle';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -36,7 +37,7 @@ const Sidebar = () => {
   if (location.pathname === '/login' || location.pathname.includes('/enlace/')) return null;
 
   return (
-    <div className="hidden md:flex flex-col w-64 h-full fixed top-0 left-0 bg-white border-r border-gray-100 p-6 z-50">
+    <div className="hidden md:flex flex-col w-64 h-full fixed top-0 left-0 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 p-6 z-50 transition-colors duration-200">
       <div className="flex items-center gap-2 mb-10 text-brand">
         <svg viewBox="0 0 24 24" fill="currentColor" stroke="none" className="w-8 h-8">
             <path d="M12 2L2 22L12 18L22 22L12 2Z" />
@@ -53,12 +54,12 @@ const Sidebar = () => {
               to={item.path}
               className={`flex items-center gap-4 px-4 py-3 rounded-2xl transition-all relative
                 ${isActive
-                  ? 'bg-brand/10 text-brand font-bold'
-                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800 font-medium'
+                  ? 'bg-brand/10 text-brand font-bold dark:bg-brand/20 dark:text-orange-400'
+                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800 dark:text-gray-400 dark:hover:bg-gray-800/60 dark:hover:text-gray-100 font-medium'
                 }`}
             >
               {item.path === '/' && vencidas > 0 && (
-                <span className="absolute left-2.5 top-3 w-2 h-2 bg-red-500 rounded-full border border-white animate-pulse"></span>
+                <span className="absolute left-2.5 top-3 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-gray-900 animate-pulse"></span>
               )}
               {item.icon}
               <span className="text-sm">
@@ -69,11 +70,15 @@ const Sidebar = () => {
         })}
       </nav>
 
-      <div className="pt-6 border-t border-gray-100 flex items-center justify-between">
+      <div className="pt-6 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-3">
+        <div className="flex items-center justify-between">
           <p className="text-xs text-brand font-black uppercase">Administrador</p>
+          <ThemeToggle size={18} />
+        </div>
       </div>
     </div>
   );
 };
 
 export default Sidebar;
+

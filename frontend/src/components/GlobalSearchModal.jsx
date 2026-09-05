@@ -46,11 +46,11 @@ const GlobalSearchModal = ({ onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 z-[200] p-4 pt-10" onClick={onClose}>
-            <div className="bg-white rounded-3xl w-full max-w-md md:max-w-2xl mx-auto max-h-[80vh] overflow-hidden flex flex-col shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs z-[200] p-4 pt-10" onClick={onClose}>
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl w-full max-w-md md:max-w-2xl mx-auto max-h-[80vh] overflow-hidden flex flex-col shadow-2xl transition-colors" onClick={e => e.stopPropagation()}>
                 
                 {/* Header Búsqueda */}
-                <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+                <div className="flex items-center gap-3 p-4 border-b border-gray-100 dark:border-gray-800">
                     <Search className="text-brand shrink-0" size={24} />
                     <input 
                         type="text" 
@@ -58,15 +58,15 @@ const GlobalSearchModal = ({ onClose }) => {
                         placeholder="Buscar tareas, proyectos o empresas..."
                         value={query}
                         onChange={e => setQuery(e.target.value)}
-                        className="flex-1 outline-none text-lg text-gray-800 placeholder-gray-300"
+                        className="flex-1 outline-none text-lg text-gray-800 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 bg-transparent"
                     />
-                    <button onClick={onClose} className="p-2 bg-gray-50 rounded-full text-gray-400">
+                    <button onClick={onClose} className="p-2 bg-gray-50 dark:bg-gray-800 rounded-full text-gray-400 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                         <X size={20} />
                     </button>
                 </div>
 
                 {/* Resultados */}
-                <div className="flex-1 overflow-y-auto p-2 bg-gray-50/50">
+                <div className="flex-1 overflow-y-auto p-2 bg-gray-50/50 dark:bg-gray-950/50">
                     {query.length < 2 && (
                         <div className="text-center p-10 text-gray-400">Escribe al menos 2 letras...</div>
                     )}
@@ -87,9 +87,9 @@ const GlobalSearchModal = ({ onClose }) => {
                                     <h3 className="text-xs font-black uppercase text-gray-400 tracking-widest mb-2 px-2">Empresas</h3>
                                     <div className="space-y-1">
                                         {results.empresas.map(e => (
-                                            <button key={e.id} onClick={() => handleAction('empresa', e)} className="w-full text-left flex items-center gap-3 p-3 bg-white rounded-xl active:bg-gray-50">
-                                                <div className="p-2 bg-blue-50 text-blue-500 rounded-lg"><Building2 size={16} /></div>
-                                                <span className="font-bold text-gray-800">{e.nombre}</span>
+                                            <button key={e.id} onClick={() => handleAction('empresa', e)} className="w-full text-left flex items-center gap-3 p-3 bg-white dark:bg-gray-900 border border-transparent dark:border-gray-800/80 rounded-xl active:bg-gray-50 dark:active:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                                <div className="p-2 bg-blue-50 dark:bg-blue-950/50 text-blue-500 dark:text-blue-400 rounded-lg"><Building2 size={16} /></div>
+                                                <span className="font-bold text-gray-800 dark:text-gray-100">{e.nombre}</span>
                                             </button>
                                         ))}
                                     </div>
@@ -102,9 +102,9 @@ const GlobalSearchModal = ({ onClose }) => {
                                     <h3 className="text-xs font-black uppercase text-gray-400 tracking-widest mb-2 px-2">Proyectos</h3>
                                     <div className="space-y-1">
                                         {results.proyectos.map(p => (
-                                            <button key={p.id} onClick={() => handleAction('proyecto', p)} className="w-full text-left flex items-center gap-3 p-3 bg-white rounded-xl active:bg-gray-50">
-                                                <div className="p-2 bg-purple-50 text-purple-500 rounded-lg"><FolderKanban size={16} /></div>
-                                                <span className="font-bold text-gray-800 truncate">{p.nombre}</span>
+                                            <button key={p.id} onClick={() => handleAction('proyecto', p)} className="w-full text-left flex items-center gap-3 p-3 bg-white dark:bg-gray-900 border border-transparent dark:border-gray-800/80 rounded-xl active:bg-gray-50 dark:active:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                                <div className="p-2 bg-purple-50 dark:bg-purple-950/50 text-purple-500 dark:text-purple-400 rounded-lg"><FolderKanban size={16} /></div>
+                                                <span className="font-bold text-gray-800 dark:text-gray-100 truncate">{p.nombre}</span>
                                             </button>
                                         ))}
                                     </div>
@@ -117,10 +117,10 @@ const GlobalSearchModal = ({ onClose }) => {
                                     <h3 className="text-xs font-black uppercase text-gray-400 tracking-widest mb-2 px-2">Tareas Pendientes</h3>
                                     <div className="space-y-1">
                                         {results.tareas.map(t => (
-                                            <button key={t.id} onClick={() => handleAction('tarea', t)} className="w-full text-left flex items-center gap-3 p-3 bg-white rounded-xl active:bg-gray-50">
-                                                <div className="p-2 bg-green-50 text-green-500 rounded-lg"><CheckSquare size={16} /></div>
+                                            <button key={t.id} onClick={() => handleAction('tarea', t)} className="w-full text-left flex items-center gap-3 p-3 bg-white dark:bg-gray-900 border border-transparent dark:border-gray-800/80 rounded-xl active:bg-gray-50 dark:active:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                                <div className="p-2 bg-green-50 dark:bg-green-950/50 text-green-500 dark:text-green-400 rounded-lg"><CheckSquare size={16} /></div>
                                                 <div className="flex-1 min-w-0">
-                                                    <span className="font-bold text-gray-800 block truncate">{t.titulo}</span>
+                                                    <span className="font-bold text-gray-800 dark:text-gray-100 block truncate">{t.titulo}</span>
                                                     <span className="text-xs text-gray-400 truncate">{t.proyecto_nombre || 'General'}</span>
                                                 </div>
                                             </button>
@@ -137,3 +137,4 @@ const GlobalSearchModal = ({ onClose }) => {
 }
 
 export default GlobalSearchModal;
+

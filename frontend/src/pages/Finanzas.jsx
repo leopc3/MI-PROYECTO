@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Plus, TrendingUp, TrendingDown, Calendar, Building2, Pencil, Trash2, RefreshCw, CheckCircle2 } from 'lucide-react';
 import AddFinanzaModal from '../components/AddFinanzaModal';
 import EditFinanzaModal from '../components/EditFinanzaModal';
+import ThemeToggle from '../components/ThemeToggle';
 
 const Finanzas = () => {
     const [tab, setTab] = useState('ingresos');
@@ -45,7 +46,6 @@ const Finanzas = () => {
         let eliminarSerie = false;
 
         if (esRecurrente) {
-            // Mostrar diálogo con 3 opciones usando confirm/cancel
             const respuesta = window.confirm(
                 `Este ${tipo} es recurrente mensual.\n\n` +
                 `¿Deseas eliminar TODOS los meses futuros pendientes de esta serie?\n\n` +
@@ -59,55 +59,50 @@ const Finanzas = () => {
 
         try {
             const token = localStorage.getItem('token');
-            if (eliminarSerie) {
-                await axios.delete(`/api/finanzas/${tab}/${id}/serie`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-            } else {
-                await axios.delete(`/api/finanzas/${tab}/${id}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-            }
+            const url = eliminarSerie 
+                ? `/api/finanzas/${tab}/${id}?eliminar_serie=true` 
+                : `/api/finanzas/${tab}/${id}`;
+            await axios.delete(url, { headers: { 'Authorization': `Bearer ${token}` } });
             fetchData();
         } catch (error) { console.error(error); }
     };
-
 
     const handleToggleEstado = async (id, tipo) => {
+        const token = localStorage.getItem('token');
         try {
-            await axios.patch(`/api/finanzas/${tipo}s/${id}/estado`);
-            fetchData();
+            await axios.patch(`/api/finanzas/${tipo}s/${id}/toggle`, {}, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            setData(data.map(d => d.id === id ? { ...d, estado: d.estado === 'pagado' ? 'pendiente' : 'pagado' } : d));
         } catch (error) { console.error(error); }
     };
 
-    const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('es-ES', {
-        day: '2-digit', month: 'short', year: 'numeric'
-    });
+    const formatDate = (dateStr) => {
+        if (!dateStr) return '';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    };
 
     const isIng = tab === 'ingresos';
 
-    // Filtrar data por mes seleccionado
     const dataFiltrada = data.filter(item => {
-        const dateStr = item.fecha_estimada || item.fecha_pago;
-        if (!dateStr) return false;
-        const d = new Date(dateStr);
-        return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+        const fecha = new Date(item.fecha_estimada || item.fecha_pago);
+        return fecha.getMonth() === selectedMonth && fecha.getFullYear() === selectedYear;
     });
 
-    // Calcular KPIs del mes TODO ingresos y egresos (requiere iterar el arrays por separado si tab está en uno solo, pero para el balance global del mes que funcione, necesito traer la otra data)
-    // Para simplificar, si estamos en 'ingresos', sumamos 'ingresos' filtrados.
     const sumaMes = dataFiltrada.reduce((acc, curr) => {
-        // Asumiendo que todo lo convertimos a BOB temporalmente o ignoramos la moneda en la UI para la suma básica (o solo sumamos USD si es USD)
-        // Para exactitud omitimos conversión y sumamos bruto, pero un ERP real convertiría con tipo de cambio.
         return acc + parseFloat(curr.monto);
     }, 0);
 
     return (
-        <div className="p-4 md:p-8 max-w-5xl mx-auto bg-gray-50 min-h-screen">
-            <h1 className="text-2xl font-black text-gray-800 mb-5 px-1">Finanzas</h1>
+        <div className="p-4 md:p-8 max-w-5xl mx-auto bg-gray-50 dark:bg-gray-950 min-h-screen transition-colors duration-200">
+            <div className="flex justify-between items-center mb-5 px-1">
+                <h1 className="text-2xl font-black text-gray-800 dark:text-gray-100">Finanzas</h1>
+                <ThemeToggle size={20} />
+            </div>
 
             {/* Selector Mensual y Resumen */}
-            <div className="bg-white p-4 rounded-3xl shadow-sm border border-gray-100 mb-5 flex flex-col">
+            <div className="bg-white dark:bg-gray-900 p-4 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 mb-5 flex flex-col transition-colors">
                 <div className="flex justify-between items-center mb-3">
                     <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Resumen del Mes</span>
                     <input 
@@ -118,7 +113,7 @@ const Finanzas = () => {
                             setSelectedYear(parseInt(y));
                             setSelectedMonth(parseInt(m) - 1);
                         }}
-                        className="text-sm font-bold text-brand bg-orange-50 px-2 py-1 outline-none rounded-xl"
+                        className="text-sm font-bold text-brand bg-orange-50 dark:bg-gray-800 px-2 py-1 outline-none rounded-xl"
                     />
                 </div>
                 <div className="flex justify-between items-end">
@@ -132,16 +127,16 @@ const Finanzas = () => {
             </div>
 
             {/* Tabs */}
-            <div className="flex bg-gray-200/60 p-1.5 rounded-2xl mb-5 backdrop-blur-sm">
+            <div className="flex bg-gray-200/60 dark:bg-gray-800/80 p-1.5 rounded-2xl mb-5 backdrop-blur-sm">
                 <button
                     onClick={() => { setTab('ingresos'); setFiltroEmpresa(''); }}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === 'ingresos' ? 'bg-white shadow-md text-green-600' : 'text-gray-500'}`}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === 'ingresos' ? 'bg-white dark:bg-gray-700 shadow-md text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}
                 >
                     Ingresos (Cobros)
                 </button>
                 <button
                     onClick={() => { setTab('egresos'); setFiltroEmpresa(''); }}
-                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === 'egresos' ? 'bg-white shadow-md text-red-600' : 'text-gray-500'}`}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${tab === 'egresos' ? 'bg-white dark:bg-gray-700 shadow-md text-red-600 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}`}
                 >
                     Egresos (Pagos)
                 </button>
@@ -153,7 +148,7 @@ const Finanzas = () => {
                     <select
                         value={filtroEmpresa}
                         onChange={e => setFiltroEmpresa(e.target.value)}
-                        className="w-full p-3 bg-white border border-gray-100 rounded-2xl shadow-sm text-sm font-medium text-gray-600 outline-none focus:ring-2 focus:ring-brand"
+                        className="w-full p-3 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl shadow-sm text-sm font-medium text-gray-600 dark:text-gray-200 outline-none focus:ring-2 focus:ring-brand"
                     >
                         <option value="">Todas las empresas</option>
                         {empresas.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
@@ -164,22 +159,22 @@ const Finanzas = () => {
             {/* Lista */}
             <div className="space-y-3 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
                 {dataFiltrada.length > 0 ? dataFiltrada.map(item => (
-                    <div key={item.id} className={`bg-white p-4 rounded-3xl shadow-sm border border-gray-100 transition-all ${item.estado === 'pagado' ? 'opacity-70 bg-gray-50' : ''}`}>
+                    <div key={item.id} className={`bg-white dark:bg-gray-900 p-4 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 transition-all ${item.estado === 'pagado' ? 'opacity-70 bg-gray-50 dark:bg-gray-800/40' : ''}`}>
                         <div className="flex items-center gap-3">
                             <div 
                                 onClick={() => handleToggleEstado(item.id, isIng ? 'ingreso' : 'egreso')}
-                                className={`p-2.5 rounded-2xl shrink-0 cursor-pointer transition-transform hover:scale-110 shadow-sm ${item.estado === 'pagado' ? 'bg-green-100 text-green-600' : isIng ? 'bg-orange-50 text-green-500' : 'bg-red-50 text-red-500'}`}
+                                className={`p-2.5 rounded-2xl shrink-0 cursor-pointer transition-transform hover:scale-110 shadow-sm ${item.estado === 'pagado' ? 'bg-green-100 dark:bg-green-950/50 text-green-600 dark:text-green-400' : isIng ? 'bg-orange-50 dark:bg-brand/20 text-green-500' : 'bg-red-50 dark:bg-red-950/40 text-red-500'}`}
                                 title={item.estado === 'pagado' ? "Marcar como pendiente" : "Marcar como COMPLETADO"}
                             >
                                 {item.estado === 'pagado' ? <CheckCircle2 size={24} /> : isIng ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
                             </div>
                             <div className={`flex-1 min-w-0 ${item.estado === 'pagado' ? 'line-through text-gray-400' : ''}`}>
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="font-bold text-gray-800 truncate">
+                                    <p className="font-bold text-gray-800 dark:text-gray-100 truncate">
                                         {isIng ? item.empresa_nombre : (item.observacion || 'Gasto General')}
                                     </p>
                                     {!isIng && item.es_recurrente_mensual && (
-                                        <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 bg-brand/10 text-brand rounded-full uppercase">
+                                        <span className="flex items-center gap-1 text-[10px] font-black px-2 py-0.5 bg-brand/10 dark:bg-brand/20 text-brand rounded-full uppercase">
                                             <RefreshCw size={8} /> Recurrente
                                         </span>
                                     )}
@@ -193,14 +188,14 @@ const Finanzas = () => {
                                 )}
                             </div>
                             <div className="flex flex-col items-end gap-1 shrink-0">
-                                <span className={`text-lg font-black ${item.estado === 'pagado' ? 'text-gray-400' : isIng ? 'text-green-600' : 'text-red-600'}`}>
+                                <span className={`text-lg font-black ${item.estado === 'pagado' ? 'text-gray-400' : isIng ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                                     {item.moneda === 'USD' ? '$' : 'Bs. '}{item.monto}
                                 </span>
                                 <div className="flex gap-1 mt-1">
-                                    <button onClick={() => setEditItem(item)} className="p-1.5 rounded-xl bg-orange-50 text-brand active:scale-95 transition-all">
+                                    <button onClick={() => setEditItem(item)} className="p-1.5 rounded-xl bg-orange-50 dark:bg-brand/20 text-brand active:scale-95 transition-all">
                                         <Pencil size={14} />
                                     </button>
-                                    <button onClick={() => handleEliminar(item.id)} className="p-1.5 rounded-xl bg-red-50 text-red-500 active:scale-95 transition-all">
+                                    <button onClick={() => handleEliminar(item.id)} className="p-1.5 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-500 dark:text-red-400 active:scale-95 transition-all">
                                         <Trash2 size={14} />
                                     </button>
                                 </div>
@@ -208,7 +203,7 @@ const Finanzas = () => {
                         </div>
                     </div>
                 )) : (
-                    <div className="text-center py-20 text-gray-300 italic bg-white rounded-3xl border border-gray-100">
+                    <div className="text-center py-20 text-gray-400 dark:text-gray-500 italic bg-white dark:bg-gray-900 rounded-3xl border border-gray-100 dark:border-gray-800">
                         No hay registros en {new Date(selectedYear, selectedMonth).toLocaleDateString('es-ES', {month: 'long', year: 'numeric'})}.
                     </div>
                 )}

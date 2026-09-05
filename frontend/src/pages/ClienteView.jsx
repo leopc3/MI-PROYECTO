@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Calendar, CheckCircle2, Plus, Filter, AlertTriangle, Download, Pencil, Trash2, Eye, EyeOff } from 'lucide-react';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import ThemeToggle from '../components/ThemeToggle';
 
 const ClienteView = () => {
     const { uuid } = useParams();
@@ -142,8 +143,8 @@ const ClienteView = () => {
     };
 
     return (
-        <div className="bg-gray-50 min-h-screen">
-            <div className="max-w-3xl mx-auto bg-white min-h-screen pb-24 shadow-[0_0_40px_rgba(0,0,0,0.05)] border-x border-gray-100">
+        <div className="bg-gray-50 dark:bg-gray-950 min-h-screen text-gray-800 dark:text-gray-100 transition-colors">
+            <div className="max-w-3xl mx-auto bg-white dark:bg-gray-900 min-h-screen pb-24 shadow-[0_0_40px_rgba(0,0,0,0.05)] border-x border-gray-100 dark:border-gray-800">
                 {/* Header */}
                 <div className={`p-8 md:p-12 text-white shadow-lg mb-8 transition-colors ${proyecto.estado === 'completado' ? 'bg-green-600' : proyecto.estado === 'pausado' ? 'bg-yellow-500' : 'bg-brand rounded-b-[40px]'}`}>
                     <div className="flex justify-between items-start gap-4 flex-wrap">
@@ -155,6 +156,7 @@ const ClienteView = () => {
                             )}
                         </div>
                         <div className="flex items-center gap-2">
+                            <ThemeToggle />
                             <button onClick={handleDownloadReport} className="bg-white text-brand px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-md hover:bg-gray-50 active:scale-95 transition-all flex items-center gap-2">
                                 <Download size={16} /> REPORTE PDF
                             </button>
@@ -170,9 +172,9 @@ const ClienteView = () => {
                 {/* Observación de Estado (Si existe) */}
                 {proyecto.observacion_estado && (
                     <div className="px-6 md:px-12 mb-8 -mt-4">
-                        <div className="bg-orange-50 border border-orange-100 p-5 rounded-2xl shadow-sm">
-                            <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-1.5">Mensaje de la agencia</p>
-                            <p className="text-sm font-medium text-gray-700 italic">"{proyecto.observacion_estado}"</p>
+                        <div className="bg-orange-50 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/40 p-5 rounded-2xl shadow-sm">
+                            <p className="text-[10px] font-black text-orange-500 dark:text-orange-400 uppercase tracking-widest mb-1.5">Mensaje de la agencia</p>
+                            <p className="text-sm font-medium text-gray-700 dark:text-gray-200 italic">"{proyecto.observacion_estado}"</p>
                         </div>
                     </div>
                 )}
@@ -181,36 +183,36 @@ const ClienteView = () => {
                 {tareas.length > 0 && (
                     <div className="px-6 md:px-12 mb-6 flex flex-col gap-3">
                         <div className="flex sm:items-center justify-between gap-4 flex-wrap">
-                            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+                            <h3 className="font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
                                 <Filter size={18} className="text-brand" /> Progreso de Tareas
                             </h3>
                             <div className="flex flex-wrap items-center gap-2">
-                                <div className="flex bg-gray-100 p-1.5 rounded-xl">
+                                <div className="flex bg-gray-100 dark:bg-gray-800 p-1.5 rounded-xl border border-transparent dark:border-gray-700">
                                     <button
                                         onClick={() => { setFiltro('pendientes'); setFechaDesde(''); setFechaHasta(''); }}
-                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${filtro === 'pendientes' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-400 hover:text-gray-600'}`}
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${filtro === 'pendientes' ? 'bg-white dark:bg-gray-700 shadow-sm text-gray-800 dark:text-gray-100' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}`}
                                     >
                                         Pendientes
                                     </button>
                                     <button
                                         onClick={() => { setFiltro('retrasadas'); setFechaDesde(''); setFechaHasta(''); }}
-                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${filtro === 'retrasadas' ? 'bg-red-50 shadow-sm text-red-600 border border-red-100' : 'text-gray-400 hover:text-red-400'}`}
+                                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${filtro === 'retrasadas' ? 'bg-red-50 dark:bg-red-950/50 shadow-sm text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/50' : 'text-gray-400 hover:text-red-400'}`}
                                     >
                                         <AlertTriangle size={14} /> Retrasadas
                                     </button>
                                 </div>
 
-                                <div className="flex items-center bg-gray-100 p-1.5 rounded-xl border border-transparent focus-within:border-brand transition-colors flex-wrap sm:flex-nowrap">
+                                <div className="flex items-center bg-gray-100 dark:bg-gray-800 p-1.5 rounded-xl border border-transparent dark:border-gray-700 focus-within:border-brand transition-colors flex-wrap sm:flex-nowrap">
                                     <span className="text-[10px] uppercase font-bold text-gray-400 mr-2 ml-2">Del</span>
                                     <input
                                         type="date"
                                         value={fechaDesde}
                                         onChange={(e) => {
-                                            setFechaDesde(e.target.value);
+                                             setFechaDesde(e.target.value);
                                             if (e.target.value || fechaHasta) setFiltro('fecha');
                                             else setFiltro('pendientes');
                                         }}
-                                        className="bg-transparent text-xs font-bold text-gray-700 outline-none cursor-pointer w-[110px]"
+                                        className="bg-transparent text-xs font-bold text-gray-700 dark:text-gray-200 outline-none cursor-pointer w-[110px]"
                                     />
                                     <span className="text-[10px] uppercase font-bold text-gray-400 mx-2">Al</span>
                                     <input
@@ -221,10 +223,10 @@ const ClienteView = () => {
                                             if (fechaDesde || e.target.value) setFiltro('fecha');
                                             else setFiltro('pendientes');
                                         }}
-                                        className="bg-transparent text-xs font-bold text-gray-700 outline-none cursor-pointer w-[110px]"
+                                        className="bg-transparent text-xs font-bold text-gray-700 dark:text-gray-200 outline-none cursor-pointer w-[110px]"
                                     />
                                     {(fechaDesde || fechaHasta) && (
-                                        <button onClick={() => { setFechaDesde(''); setFechaHasta(''); setFiltro('pendientes'); }} className="ml-1 text-[10px] bg-red-100 text-red-500 rounded-md py-1 px-2 font-black hover:bg-red-200">
+                                        <button onClick={() => { setFechaDesde(''); setFechaHasta(''); setFiltro('pendientes'); }} className="ml-1 text-[10px] bg-red-100 dark:bg-red-900/50 text-red-500 dark:text-red-400 rounded-md py-1 px-2 font-black hover:bg-red-200">
                                             X
                                         </button>
                                     )}
@@ -236,7 +238,7 @@ const ClienteView = () => {
                         {totalCompletadas > 0 && (
                             <button
                                 onClick={() => setMostrarCompletadas(!mostrarCompletadas)}
-                                className="flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-gray-600 transition-colors self-start"
+                                className="flex items-center gap-2 text-xs font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors self-start"
                             >
                                 {mostrarCompletadas ? <EyeOff size={14} /> : <Eye size={14} />}
                                 {mostrarCompletadas ? `Ocultar completadas (${totalCompletadas})` : `Ver completadas (${totalCompletadas})`}
@@ -248,24 +250,24 @@ const ClienteView = () => {
                 {/* Calendario Vertical */}
                 <div className="px-6 md:px-12 relative">
                     {tareas.length === 0 ? (
-                        <div className="text-center py-24 px-6 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-                            <div className="w-20 h-20 bg-orange-100 text-brand rounded-full flex items-center justify-center mx-auto mb-4">
+                        <div className="text-center py-24 px-6 bg-gray-50 dark:bg-gray-800/40 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
+                            <div className="w-20 h-20 bg-orange-100 dark:bg-orange-950/40 text-brand rounded-full flex items-center justify-center mx-auto mb-4">
                                 <Calendar size={32} />
                             </div>
-                            <h3 className="text-xl font-black text-gray-800 mb-2">¡Bienvenido a tu proyecto!</h3>
-                            <p className="text-gray-500 text-sm max-w-sm mx-auto">
+                            <h3 className="text-xl font-black text-gray-800 dark:text-gray-100 mb-2">¡Bienvenido a tu proyecto!</h3>
+                            <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
                                 Aún no tenemos actividades programadas. Si el proyecto está activo, puedes sugerir o solicitar tareas utilizando el botón flotante.
                             </p>
                         </div>
                     ) : tareasFiltradas.length === 0 ? (
-                        <div className="text-center py-16 text-gray-400 font-medium bg-green-50 rounded-3xl border border-green-100 flex flex-col items-center">
+                        <div className="text-center py-16 text-gray-400 font-medium bg-green-50 dark:bg-green-950/20 rounded-3xl border border-green-100 dark:border-green-900/40 flex flex-col items-center">
                             <CheckCircle2 size={32} className="text-green-400 mb-2" />
                             {filtro === 'retrasadas' ? '¡Felicidades! Todo está al día y no hay retrasos.' : '¡Todo completado! Usa el toggle para ver las tareas finalizadas.'}
                         </div>
                     ) : (
                         <>
                             {/* Línea central del tiempo */}
-                            <div className="absolute left-[33px] md:left-[57px] top-4 bottom-4 w-0.5 bg-gray-100"></div>
+                            <div className="absolute left-[33px] md:left-[57px] top-4 bottom-4 w-0.5 bg-gray-100 dark:bg-gray-800"></div>
 
                             <div className="space-y-8">
                                 {tareasFiltradas.map((tarea) => {
@@ -275,11 +277,11 @@ const ClienteView = () => {
 
                                     return (
                                         <div key={tarea.id} className="flex gap-4 relative z-10 transition-all hover:-translate-y-0.5">
-                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white shadow-sm shrink-0 ${tarea.estado === 'cumplida' ? 'bg-green-500' : isRetrasada ? 'bg-red-500' : 'bg-brand'}`}>
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center border-4 border-white dark:border-gray-900 shadow-sm shrink-0 ${tarea.estado === 'cumplida' ? 'bg-green-500' : isRetrasada ? 'bg-red-500' : 'bg-brand'}`}>
                                                 {isRetrasada && tarea.estado !== 'cumplida' ? <AlertTriangle size={16} className="text-white" /> : <Calendar size={16} className="text-white" />}
                                             </div>
 
-                                            <div className={`flex-1 p-5 rounded-2xl border ${tarea.estado === 'cumplida' ? 'bg-gray-50 border-gray-100 opacity-60' : isRetrasada ? 'bg-red-50 border-red-200 shadow-sm' : 'bg-white border-gray-100 shadow-sm'}`}>
+                                            <div className={`flex-1 p-5 rounded-2xl border ${tarea.estado === 'cumplida' ? 'bg-gray-50 dark:bg-gray-850 border-gray-100 dark:border-gray-800 opacity-60' : isRetrasada ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/40 shadow-sm' : 'bg-white dark:bg-gray-800/90 border-gray-100 dark:border-gray-800 shadow-sm'}`}>
                                                 <div className="flex justify-between items-start gap-4">
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-2 mb-1">
@@ -287,16 +289,16 @@ const ClienteView = () => {
                                                                 {new Date(tarea.fecha_asignada).toLocaleDateString()}
                                                             </p>
                                                             {esDCliente ? (
-                                                                <span className="text-[9px] font-black bg-orange-100 text-orange-600 px-2 py-0.5 rounded-md uppercase">Tu Petición</span>
+                                                                <span className="text-[9px] font-black bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded-md uppercase">Tu Petición</span>
                                                             ) : (
-                                                                <span className="text-[9px] font-black bg-gray-100 text-gray-500 px-2 py-0.5 rounded-md uppercase">Agencia</span>
+                                                                <span className="text-[9px] font-black bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-300 px-2 py-0.5 rounded-md uppercase">Agencia</span>
                                                             )}
                                                         </div>
-                                                        <p className={`font-bold text-gray-800 text-base leading-snug ${tarea.estado === 'cumplida' ? 'line-through text-gray-400' : ''}`}>
+                                                        <p className={`font-bold text-gray-800 dark:text-gray-100 text-base leading-snug ${tarea.estado === 'cumplida' ? 'line-through text-gray-400 dark:text-gray-500' : ''}`}>
                                                             {tarea.titulo}
                                                         </p>
                                                         {tarea.observacion && (
-                                                            <p className={`text-sm mt-1 transition-all ${tarea.estado === 'cumplida' ? 'text-gray-400 line-through opacity-60' : 'text-gray-500 italic font-medium'}`}>
+                                                            <p className={`text-sm mt-1 transition-all ${tarea.estado === 'cumplida' ? 'text-gray-400 dark:text-gray-500 line-through opacity-60' : 'text-gray-500 dark:text-gray-400 italic font-medium'}`}>
                                                                 {tarea.observacion}
                                                             </p>
                                                         )}
@@ -313,14 +315,14 @@ const ClienteView = () => {
                                                                         observacion: tarea.observacion || '',
                                                                         fecha_asignada: tarea.fecha_asignada?.split('T')[0]
                                                                     })}
-                                                                    className="p-1.5 rounded-full text-gray-300 hover:text-brand hover:bg-orange-50 transition-all"
+                                                                    className="p-1.5 rounded-full text-gray-400 hover:text-brand hover:bg-orange-50 dark:hover:bg-orange-950/40 transition-all"
                                                                     title="Editar petición"
                                                                 >
                                                                     <Pencil size={18} />
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleEliminarTarea(tarea.id)}
-                                                                    className="p-1.5 rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                                                                    className="p-1.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-all"
                                                                     title="Eliminar petición"
                                                                 >
                                                                     <Trash2 size={18} />
@@ -332,9 +334,9 @@ const ClienteView = () => {
                                                             onClick={() => toggleComplete(tarea.id)}
                                                             disabled={proyecto.estado !== 'activo'}
                                                             className={`p-1.5 rounded-full shrink-0 transition-all ${
-                                                                tarea.estado === 'cumplida' ? 'text-green-500 hover:bg-green-50'
-                                                                : proyecto.estado !== 'activo' ? 'text-gray-200 cursor-not-allowed'
-                                                                : 'text-gray-300 hover:text-brand hover:bg-orange-50'
+                                                                tarea.estado === 'cumplida' ? 'text-green-500 hover:bg-green-50 dark:hover:bg-green-950/40'
+                                                                : proyecto.estado !== 'activo' ? 'text-gray-200 dark:text-gray-700 cursor-not-allowed'
+                                                                : 'text-gray-300 dark:text-gray-600 hover:text-brand hover:bg-orange-50 dark:hover:bg-orange-950/40'
                                                             }`}
                                                             title={proyecto.estado !== 'activo' ? 'Bloqueado (Proyecto inactivo)' : 'Marcar tarea'}
                                                         >
@@ -360,21 +362,32 @@ const ClienteView = () => {
 
                 {/* Modal Añadir Tarea */}
                 {isModalOpen && (
-                    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[100] backdrop-blur-sm">
-                        <form onSubmit={handleAddTask} className="bg-white w-full max-w-sm p-6 rounded-3xl space-y-4 shadow-2xl">
-                            <h2 className="text-xl font-bold text-gray-800">Nueva Petición</h2>
-                            <p className="text-sm text-gray-500 -mt-2 mb-4">Añade una tarea al proyecto y el equipo la priorizará.</p>
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-[100]">
+                        <form onSubmit={handleAddTask} className="bg-white dark:bg-gray-900 w-full max-w-sm p-6 rounded-3xl space-y-4 shadow-2xl border border-transparent dark:border-gray-800">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Nueva Petición</h2>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 -mt-2 mb-4">Añade una tarea al proyecto y el equipo la priorizará.</p>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">¿Qué necesitas?</label>
-                                <input type="text" placeholder="Ej. Modificar texto del banner..." required className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-brand focus:bg-white transition-all text-sm font-medium" onChange={e => setNuevaTarea({ ...nuevaTarea, titulo: e.target.value })} />
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">¿Qué necesitas?</label>
+                                <input
+                                    type="text"
+                                    placeholder="Ej. Modificar texto del banner..."
+                                    required
+                                    className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-brand focus:bg-white dark:focus:bg-gray-800 transition-all text-sm font-medium text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
+                                    onChange={e => setNuevaTarea({ ...nuevaTarea, titulo: e.target.value })}
+                                />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Para la fecha</label>
-                                <input type="date" required className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-brand focus:bg-white transition-all text-sm font-medium text-gray-600" onChange={e => setNuevaTarea({ ...nuevaTarea, fecha: e.target.value })} />
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Para la fecha</label>
+                                <input
+                                    type="date"
+                                    required
+                                    className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-brand focus:bg-white dark:focus:bg-gray-800 transition-all text-sm font-medium text-gray-900 dark:text-gray-100"
+                                    onChange={e => setNuevaTarea({ ...nuevaTarea, fecha: e.target.value })}
+                                />
                             </div>
                             <div className="flex gap-2 pt-2">
-                                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 font-bold text-gray-500 bg-gray-100 rounded-xl hover:bg-gray-200">Cancelar</button>
-                                <button type="submit" className="flex-1 py-3 bg-brand text-white rounded-xl font-bold shadow-lg shadow-brand/30 hover:bg-orange-600">Enviar a Agencia</button>
+                                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Cancelar</button>
+                                <button type="submit" className="flex-1 py-3 bg-brand text-white rounded-xl font-bold shadow-lg shadow-brand/30 hover:opacity-90">Enviar a Agencia</button>
                             </div>
                         </form>
                     </div>
@@ -382,41 +395,41 @@ const ClienteView = () => {
 
                 {/* Modal Editar Tarea */}
                 {editando && (
-                    <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[100] backdrop-blur-sm">
-                        <form onSubmit={handleEditTask} className="bg-white w-full max-w-sm p-6 rounded-3xl space-y-4 shadow-2xl">
-                            <h2 className="text-xl font-bold text-gray-800">Editar Petición</h2>
+                    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 z-[100]">
+                        <form onSubmit={handleEditTask} className="bg-white dark:bg-gray-900 w-full max-w-sm p-6 rounded-3xl space-y-4 shadow-2xl border border-transparent dark:border-gray-800">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Editar Petición</h2>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Título</label>
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Título</label>
                                 <input
                                     type="text"
                                     required
                                     value={editando.titulo}
                                     onChange={e => setEditando({ ...editando, titulo: e.target.value })}
-                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-brand focus:bg-white transition-all text-sm font-medium"
+                                    className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-brand focus:bg-white dark:focus:bg-gray-800 transition-all text-sm font-medium text-gray-900 dark:text-gray-100"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Observación (opcional)</label>
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Observación (opcional)</label>
                                 <textarea
                                     rows={3}
                                     value={editando.observacion}
                                     onChange={e => setEditando({ ...editando, observacion: e.target.value })}
-                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-brand focus:bg-white transition-all text-sm font-medium resize-none"
+                                    className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-brand focus:bg-white dark:focus:bg-gray-800 transition-all text-sm font-medium resize-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-1.5">Fecha</label>
+                                <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Fecha</label>
                                 <input
                                     type="date"
                                     required
                                     value={editando.fecha_asignada}
                                     onChange={e => setEditando({ ...editando, fecha_asignada: e.target.value })}
-                                    className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-brand focus:bg-white transition-all text-sm font-medium text-gray-600"
+                                    className="w-full p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-brand focus:bg-white dark:focus:bg-gray-800 transition-all text-sm font-medium text-gray-900 dark:text-gray-100"
                                 />
                             </div>
                             <div className="flex gap-2 pt-2">
-                                <button type="button" onClick={() => setEditando(null)} className="flex-1 py-3 font-bold text-gray-500 bg-gray-100 rounded-xl hover:bg-gray-200">Cancelar</button>
-                                <button type="submit" className="flex-1 py-3 bg-brand text-white rounded-xl font-bold shadow-lg shadow-brand/30 hover:bg-orange-600">Guardar Cambios</button>
+                                <button type="button" onClick={() => setEditando(null)} className="flex-1 py-3 font-bold text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">Cancelar</button>
+                                <button type="submit" className="flex-1 py-3 bg-brand text-white rounded-xl font-bold shadow-lg shadow-brand/30 hover:opacity-90">Guardar Cambios</button>
                             </div>
                         </form>
                     </div>

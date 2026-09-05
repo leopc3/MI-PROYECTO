@@ -28,12 +28,12 @@ const MonthCalendar = ({ selectedDate, setSelectedDate, tareasPorDia = {} }) => 
     const diaNombres = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'];
 
     return (
-        <div className="bg-white p-3 rounded-2xl shadow-sm border border-gray-100">
+        <div className="bg-white dark:bg-gray-900 p-3 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 transition-colors">
             {/* Controles de mes */}
             <div className="flex justify-between items-center mb-3 px-2">
                 <button 
                     onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1))}
-                    className="font-bold text-gray-400 p-2"
+                    className="font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-2"
                 >
                     &lt;
                 </button>
@@ -42,7 +42,7 @@ const MonthCalendar = ({ selectedDate, setSelectedDate, tareasPorDia = {} }) => 
                 </div>
                 <button 
                     onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1))}
-                    className="font-bold text-gray-400 p-2"
+                    className="font-bold text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-2"
                 >
                     &gt;
                 </button>
@@ -67,8 +67,8 @@ const MonthCalendar = ({ selectedDate, setSelectedDate, tareasPorDia = {} }) => 
                             onClick={() => setSelectedDate(d)}
                             className={`relative flex items-center justify-center h-10 rounded-xl cursor-pointer transition-all
                                 ${isSelected ? 'bg-brand text-white shadow-md font-bold' 
-                                  : isToday ? 'bg-orange-50 text-brand font-bold' 
-                                  : 'text-gray-600 hover:bg-gray-50'}`}
+                                  : isToday ? 'bg-orange-50 dark:bg-brand/20 text-brand font-bold' 
+                                  : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
                         >
                             <span>{d.getDate()}</span>
                             {numTareas > 0 && !isSelected && (
@@ -80,6 +80,7 @@ const MonthCalendar = ({ selectedDate, setSelectedDate, tareasPorDia = {} }) => 
             </div>
         </div>
     );
+
 };
 
 export default MonthCalendar;

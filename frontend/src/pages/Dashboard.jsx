@@ -9,8 +9,10 @@ import EditTaskModal from '../components/EditTaskModal';
 import GlobalSearchModal from '../components/GlobalSearchModal';
 import QuickFinanzaModal from '../components/QuickFinanzaModal';
 import AmortizarDeudaModal from '../components/AmortizarDeudaModal';
+import ThemeToggle from '../components/ThemeToggle';
 
 const Dashboard = () => {
+
     const navigate = useNavigate();
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [viewMode, setViewMode] = useState('week'); // 'week' | 'month'
@@ -269,31 +271,32 @@ const Dashboard = () => {
 
 
     return (
-        <div className="p-4 md:p-8 max-w-7xl mx-auto bg-gray-50 min-h-screen">
+        <div className="p-4 md:p-8 max-w-7xl mx-auto bg-gray-50 dark:bg-gray-950 min-h-screen transition-colors duration-200">
             {/* Header con mini-stats */}
             <div className="flex justify-between items-start mb-6 pt-2">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-800 tracking-tight">Hola, Admin 👋</h1>
-                    <p className="text-sm font-bold text-gray-400 capitalize">
+                    <h1 className="text-3xl font-black text-gray-800 dark:text-gray-100 tracking-tight">Hola, Admin 👋</h1>
+                    <p className="text-sm font-bold text-gray-400 dark:text-gray-400 capitalize">
                         {new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
                     {/* Mini-stats bajo el saludo */}
                     <div className="flex items-center gap-3 mt-2 flex-wrap">
-                        <div className="flex items-center gap-1.5 bg-white border border-gray-100 rounded-2xl px-3 py-1.5 shadow-sm">
+                        <div className="flex items-center gap-1.5 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-2xl px-3 py-1.5 shadow-sm">
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Empresas</span>
-                            <span className="text-sm font-black text-gray-800">{kpiData.totalEmpresas}</span>
+                            <span className="text-sm font-black text-gray-800 dark:text-gray-100">{kpiData.totalEmpresas}</span>
                         </div>
-                        <div className="flex items-center gap-1.5 bg-white border border-red-100 rounded-2xl px-3 py-1.5 shadow-sm">
+                        <div className="flex items-center gap-1.5 bg-white dark:bg-gray-900 border border-red-100 dark:border-red-950/40 rounded-2xl px-3 py-1.5 shadow-sm">
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Deuda</span>
                             <span className="text-sm font-black text-red-500">Bs. {kpiData.deuda.toFixed(0)}</span>
                         </div>
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    <button onClick={() => setShowSearch(true)} className="p-2.5 bg-white border border-gray-200 rounded-full text-brand shadow-sm active:scale-95 transition-transform">
+                <div className="flex items-center gap-2">
+                    <ThemeToggle size={20} />
+                    <button onClick={() => setShowSearch(true)} className="p-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-brand shadow-sm active:scale-95 transition-transform" title="Buscar">
                         <Search size={22} />
                     </button>
-                    <button onClick={handleLogout} className="p-2.5 bg-red-50 border border-red-100 rounded-full text-red-500 shadow-sm active:scale-95 transition-transform">
+                    <button onClick={handleLogout} className="p-2.5 bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900/50 rounded-full text-red-500 dark:text-red-400 shadow-sm active:scale-95 transition-transform" title="Cerrar sesión">
                         <LogOut size={22} />
                     </button>
                 </div>
@@ -303,15 +306,15 @@ const Dashboard = () => {
             {totalRetrasos > 0 && (
                 <div 
                     onClick={() => setViendoRetrasados(true)}
-                    className="mb-5 bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-red-100 hover:shadow-md transition-all active:scale-[0.99]"
+                    className="mb-5 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 rounded-2xl p-4 flex items-center justify-between shadow-sm cursor-pointer hover:bg-red-100 dark:hover:bg-red-900/50 hover:shadow-md transition-all active:scale-[0.99]"
                 >
                     <div className="flex items-center gap-3">
                         <div className="bg-red-500 p-2 rounded-xl text-white shadow-md">
                             <AlertTriangle size={20} />
                         </div>
                         <div>
-                            <p className="text-red-800 font-bold text-sm">¡Tienes retrasos detectados!</p>
-                            <p className="text-red-500 text-xs mt-0.5 font-medium">
+                            <p className="text-red-800 dark:text-red-200 font-bold text-sm">¡Tienes retrasos detectados!</p>
+                            <p className="text-red-500 dark:text-red-400 text-xs mt-0.5 font-medium">
                                 {[
                                     tareasVencidas.length > 0 && `${tareasVencidas.length} tareas`,
                                     ingresosVencidos.length > 0 && `${ingresosVencidos.length} cobros`,
@@ -328,19 +331,19 @@ const Dashboard = () => {
 
             {/* KPIs Cards — 3 datos + 3 acciones rápidas */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-                <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
+                <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col justify-center">
                     <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Por Cobrar</p>
                     <p className="text-xl font-black mt-1 text-green-500">
                         Bs. {kpiData.ingresosBOB.toFixed(0)}
                     </p>
                 </div>
-                <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
+                <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col justify-center">
                     <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Por Cobrar</p>
-                    <p className="text-xl font-black mt-1 text-emerald-600">
+                    <p className="text-xl font-black mt-1 text-emerald-600 dark:text-emerald-400">
                         $ {kpiData.ingresosUSD.toFixed(0)}
                     </p>
                 </div>
-                <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex flex-col justify-center">
+                <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 flex flex-col justify-center">
                     <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Por Pagar</p>
                     <p className="text-xl font-black mt-1 text-red-500">
                         Bs. {kpiData.egresosPendientes.toFixed(0)}
@@ -349,43 +352,42 @@ const Dashboard = () => {
                 {/* Cobro Rápido */}
                 <div
                     onClick={() => setShowCobroModal(true)}
-                    className="bg-white p-5 rounded-3xl border border-green-100 shadow-sm flex flex-col justify-center items-center bg-gradient-to-br from-green-50 to-emerald-50/30 cursor-pointer hover:shadow-md transition-all active:scale-95"
+                    className="bg-white dark:bg-gray-900 p-5 rounded-3xl border border-green-100 dark:border-green-900/40 shadow-sm flex flex-col justify-center items-center bg-gradient-to-br from-green-50 to-emerald-50/30 dark:from-green-950/30 dark:to-emerald-950/10 cursor-pointer hover:shadow-md transition-all active:scale-95"
                 >
                     <TrendingUp size={22} className="text-green-500 mb-1" />
-                    <span className="text-sm font-black text-green-600 text-center leading-tight">Cobro Rápido</span>
+                    <span className="text-sm font-black text-green-600 dark:text-green-400 text-center leading-tight">Cobro Rápido</span>
                     <span className="text-[10px] text-green-400 font-bold mt-0.5">+ Registrar</span>
                 </div>
                 {/* Pago Rápido */}
                 <div
                     onClick={() => setShowPagoModal(true)}
-                    className="bg-white p-5 rounded-3xl border border-red-100 shadow-sm flex flex-col justify-center items-center bg-gradient-to-br from-red-50 to-rose-50/30 cursor-pointer hover:shadow-md transition-all active:scale-95"
+                    className="bg-white dark:bg-gray-900 p-5 rounded-3xl border border-red-100 dark:border-red-900/40 shadow-sm flex flex-col justify-center items-center bg-gradient-to-br from-red-50 to-rose-50/30 dark:from-red-950/30 dark:to-rose-950/10 cursor-pointer hover:shadow-md transition-all active:scale-95"
                 >
                     <TrendingDown size={22} className="text-red-400 mb-1" />
-                    <span className="text-sm font-black text-red-500 text-center leading-tight">Pago Rápido</span>
-                    <span className="text-[10px] text-red-300 font-bold mt-0.5">+ Registrar</span>
+                    <span className="text-sm font-black text-red-500 dark:text-red-400 text-center leading-tight">Pago Rápido</span>
+                    <span className="text-[10px] text-red-300 dark:text-red-400 font-bold mt-0.5">+ Registrar</span>
                 </div>
                 {/* Añadir Tarea */}
-                <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-center items-center bg-gradient-to-br from-brand/10 to-brand/5 cursor-pointer hover:shadow-md transition-all active:scale-95" onClick={() => setShowTaskModal(true)}>
+                <div className="bg-white dark:bg-gray-900 p-5 rounded-3xl border border-gray-100 dark:border-gray-800 shadow-sm flex flex-col justify-center items-center bg-gradient-to-br from-brand/10 to-brand/5 dark:from-brand/20 dark:to-brand/10 cursor-pointer hover:shadow-md transition-all active:scale-95" onClick={() => setShowTaskModal(true)}>
                     <div className="flex flex-col items-center gap-1 font-black text-brand">
                         <span className="text-sm">Añadir Tarea</span>
-                        <div className="bg-white rounded-full p-1 shadow-sm"><ChevronRight size={16} /></div>
+                        <div className="bg-white dark:bg-gray-800 rounded-full p-1 shadow-sm"><ChevronRight size={16} /></div>
                     </div>
                 </div>
             </div>
 
-
-
             {/* Calendario con Toggle M/W */}
             <div className="mb-6">
                 <div className="flex justify-between items-center mb-3 px-1">
-                    <h2 className="text-base font-black text-gray-800">Calendario</h2>
+                    <h2 className="text-base font-black text-gray-800 dark:text-gray-100">Calendario</h2>
                     <button 
                         onClick={() => setViewMode(viewMode === 'week' ? 'month' : 'week')}
-                        className="flex items-center gap-1.5 text-xs font-bold text-brand bg-orange-50 px-3 py-1.5 rounded-full"
+                        className="flex items-center gap-1.5 text-xs font-bold text-brand bg-orange-50 dark:bg-brand/20 px-3 py-1.5 rounded-full"
                     >
                         <CalendarDays size={14} /> {viewMode === 'week' ? 'Ver Mes' : 'Ver Semana'}
                     </button>
                 </div>
+
                 {viewMode === 'week' ? (
                     <WeekCalendar selectedDate={selectedDate} setSelectedDate={setSelectedDate} />
                 ) : (
@@ -396,13 +398,13 @@ const Dashboard = () => {
             {/* Lista de Actividades del día seleccionado o Retrasos */}
             <div>
                 <div className="flex justify-between items-end mb-3 px-1">
-                    <h2 className={`text-base font-black ${viendoRetrasados ? 'text-red-600' : 'text-gray-800'}`}>
+                    <h2 className={`text-base font-black ${viendoRetrasados ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-gray-100'}`}>
                         {viendoRetrasados ? `Actividades Retrasadas (${listaAMostrar.length})` : `Actividades del día (${listaAMostrar.length})`}
                     </h2>
                     {viendoRetrasados && (
                         <button 
                             onClick={() => setViendoRetrasados(false)}
-                            className="text-[10px] font-bold text-gray-500 bg-gray-200 px-3 py-1 rounded-full uppercase hover:bg-gray-300 transition-colors"
+                            className="text-[10px] font-bold text-gray-500 dark:text-gray-300 bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-full uppercase hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors"
                         >
                             Ver mi día
                         </button>
@@ -413,9 +415,9 @@ const Dashboard = () => {
                 ) : viendoRetrasados ? (
                     // ── VISTA AGRUPADA POR PROYECTO ──
                     Object.keys(retrasadasPorProyecto).length === 0 ? (
-                        <div className="bg-white rounded-3xl p-8 border border-gray-100 flex flex-col items-center shadow-sm text-center">
-                            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-green-50 text-green-400"><CheckCircle2 size={24} /></div>
-                            <p className="font-bold text-gray-500 text-sm">¡Todo al día!</p>
+                        <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 border border-gray-100 dark:border-gray-800 flex flex-col items-center shadow-sm text-center">
+                            <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-green-50 dark:bg-green-950/40 text-green-400"><CheckCircle2 size={24} /></div>
+                            <p className="font-bold text-gray-500 dark:text-gray-300 text-sm">¡Todo al día!</p>
                             <p className="text-xs text-gray-400 mt-1">No tienes ninguna obligación retrasada.</p>
                         </div>
                     ) : (
@@ -429,14 +431,14 @@ const Dashboard = () => {
                                             key === '__propias__' ? 'bg-gray-400' : 'bg-brand'
                                         }`} />
                                         <p className={`text-xs font-black uppercase tracking-widest truncate ${
-                                            key === '__finanzas__' ? 'text-green-600' :
-                                            key === '__propias__' ? 'text-gray-500' : 'text-brand'
+                                            key === '__finanzas__' ? 'text-green-600 dark:text-green-400' :
+                                            key === '__propias__' ? 'text-gray-500 dark:text-gray-400' : 'text-brand'
                                         }`}>
                                             {grupo.label}
                                         </p>
                                         <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                                            key === '__finanzas__' ? 'bg-green-100 text-green-600' :
-                                            key === '__propias__' ? 'bg-gray-100 text-gray-500' : 'bg-orange-100 text-brand'
+                                            key === '__finanzas__' ? 'bg-green-100 dark:bg-green-950/50 text-green-600 dark:text-green-400' :
+                                            key === '__propias__' ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-300' : 'bg-orange-100 dark:bg-brand/20 text-brand'
                                         }`}>
                                             {grupo.items.length}
                                         </span>
@@ -453,18 +455,18 @@ const Dashboard = () => {
                                             const dias = diasRetraso(fechaRef);
 
                                             return (
-                                                <div key={`${actItem.tipoItem}-${actItem.id}`} className={`bg-white p-4 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden flex gap-4 items-center transition-all ${isPagado ? 'opacity-60 bg-gray-50' : ''}`}>
+                                                <div key={`${actItem.tipoItem}-${actItem.id}`} className={`bg-white dark:bg-gray-900 p-4 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden flex gap-4 items-center transition-all ${isPagado ? 'opacity-60 bg-gray-50 dark:bg-gray-800/40' : ''}`}>
                                                     {isVencida && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500" />}
 
                                                     <button
                                                         onClick={() => isTarea ? handleCumplir(actItem.id) : handleToggleFinanza(actItem.id, actItem.tipoItem)}
-                                                        className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${isPagado ? 'bg-gray-200 text-gray-500' : isTarea ? 'border-2 border-gray-200 text-gray-300 hover:border-brand hover:text-brand' : isIngreso ? 'bg-green-50 text-green-500 hover:bg-green-100' : 'bg-red-50 text-red-500 hover:bg-red-100'}`}
+                                                        className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${isPagado ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400' : isTarea ? 'border-2 border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 hover:border-brand hover:text-brand' : isIngreso ? 'bg-green-50 dark:bg-green-950/40 text-green-500 hover:bg-green-100 dark:hover:bg-green-900/40' : 'bg-red-50 dark:bg-red-950/40 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40'}`}
                                                     >
                                                         {isPagado ? <CheckCircle2 size={24} /> : isTarea ? <CheckCircle2 size={24} /> : isIngreso ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
                                                     </button>
 
                                                     <div className={`flex-1 min-w-0 py-1 ${isPagado ? 'line-through text-gray-400' : ''}`}>
-                                                        <p className={`font-bold leading-tight truncate text-sm ${isVencida ? 'text-red-600' : 'text-gray-800'}`}>
+                                                        <p className={`font-bold leading-tight truncate text-sm ${isVencida ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-gray-100'}`}>
                                                             {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre || actItem.observacion || 'Cobro rápido'}` : `Pago: ${actItem.observacion || 'Pago rápido'}`}
                                                         </p>
                                                         {isTarea && actItem.observacion && (
@@ -472,17 +474,17 @@ const Dashboard = () => {
                                                         )}
                                                         <div className="flex flex-wrap gap-1 mt-1 items-center">
                                                             {dias > 0 && isVencida && (
-                                                                <span className="text-[10px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded-md">
+                                                                <span className="text-[10px] font-black bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-md">
                                                                     ⏰ {dias} día{dias !== 1 ? 's' : ''} de retraso
                                                                 </span>
                                                             )}
                                                             {!isTarea && (
-                                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${isIngreso ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${isIngreso ? 'bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400'}`}>
                                                                     {actItem.moneda === 'USD' ? '$' : 'Bs.'} {actItem.monto}
                                                                 </span>
                                                             )}
                                                             {/* Fecha */}
-                                                            <span className="text-[10px] text-gray-300 font-bold">
+                                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold">
                                                                 {new Date(fechaRef).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
                                                             </span>
                                                         </div>
@@ -490,12 +492,12 @@ const Dashboard = () => {
 
                                                     {isTarea ? (
                                                         <div className="flex flex-col gap-1 shrink-0">
-                                                            <button onClick={() => setEditTask(actItem)} className="p-2 bg-gray-50 rounded-xl text-gray-400 active:bg-gray-200 transition-colors"><PenSquare size={16} /></button>
-                                                            <button onClick={() => handleEliminar(actItem.id)} className="p-2 bg-red-50 rounded-xl text-red-500 active:bg-red-200 transition-colors"><Trash2 size={16} /></button>
+                                                            <button onClick={() => setEditTask(actItem)} className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl text-gray-400 dark:text-gray-300 active:bg-gray-200 dark:active:bg-gray-700 transition-colors"><PenSquare size={16} /></button>
+                                                            <button onClick={() => handleEliminar(actItem.id)} className="p-2 bg-red-50 dark:bg-red-950/40 rounded-xl text-red-500 dark:text-red-400 active:bg-red-200 dark:active:bg-red-900/60 transition-colors"><Trash2 size={16} /></button>
                                                         </div>
                                                     ) : (
                                                         <div className="flex flex-col gap-1 shrink-0">
-                                                            <button onClick={() => handleEliminarFinanza(actItem.id, actItem.tipoItem)} className="p-2 bg-red-50 rounded-xl text-red-400 active:bg-red-200 transition-colors" title="Eliminar"><Trash2 size={16} /></button>
+                                                            <button onClick={() => handleEliminarFinanza(actItem.id, actItem.tipoItem)} className="p-2 bg-red-50 dark:bg-red-950/40 rounded-xl text-red-400 dark:text-red-400 active:bg-red-200 dark:active:bg-red-900/60 transition-colors" title="Eliminar"><Trash2 size={16} /></button>
                                                         </div>
                                                     )}
 
@@ -519,14 +521,14 @@ const Dashboard = () => {
                                         key === '__propias__' ? 'bg-gray-400' : 'bg-brand'
                                     }`} />
                                     <p className={`text-xs font-black uppercase tracking-widest truncate ${
-                                        key === '__finanzas__' ? 'text-green-600' :
-                                        key === '__propias__' ? 'text-gray-500' : 'text-brand'
+                                        key === '__finanzas__' ? 'text-green-600 dark:text-green-400' :
+                                        key === '__propias__' ? 'text-gray-500 dark:text-gray-400' : 'text-brand'
                                     }`}>
                                         {grupo.label}
                                     </p>
                                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                                        key === '__finanzas__' ? 'bg-green-100 text-green-600' :
-                                        key === '__propias__' ? 'bg-gray-100 text-gray-500' : 'bg-orange-100 text-brand'
+                                        key === '__finanzas__' ? 'bg-green-100 dark:bg-green-950/50 text-green-600 dark:text-green-400' :
+                                        key === '__propias__' ? 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-300' : 'bg-orange-100 dark:bg-brand/20 text-brand'
                                     }`}>
                                         {grupo.items.length}
                                     </span>
@@ -542,18 +544,18 @@ const Dashboard = () => {
                                         const isVencida = fechaRef?.split('T')[0] < hoyStr && !isPagado;
 
                                         return (
-                                            <div key={`${actItem.tipoItem}-${actItem.id}`} className={`bg-white p-4 rounded-3xl shadow-sm border border-gray-100 relative overflow-hidden flex gap-4 items-center transition-all ${isPagado ? 'opacity-60 bg-gray-50' : ''}`}>
+                                            <div key={`${actItem.tipoItem}-${actItem.id}`} className={`bg-white dark:bg-gray-900 p-4 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden flex gap-4 items-center transition-all ${isPagado ? 'opacity-60 bg-gray-50 dark:bg-gray-800/40' : ''}`}>
                                                 {isVencida && <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-red-500" />}
 
                                                 <button
                                                     onClick={() => isTarea ? handleCumplir(actItem.id) : handleToggleFinanza(actItem.id, actItem.tipoItem)}
-                                                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${isPagado ? 'bg-gray-200 text-gray-500' : isTarea ? 'border-2 border-gray-200 text-gray-300 hover:border-brand hover:text-brand' : isIngreso ? 'bg-green-50 text-green-500 hover:bg-green-100' : 'bg-red-50 text-red-500 hover:bg-red-100'}`}
+                                                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${isPagado ? 'bg-gray-200 dark:bg-gray-700 text-gray-500 dark:text-gray-400' : isTarea ? 'border-2 border-gray-200 dark:border-gray-700 text-gray-300 dark:text-gray-600 hover:border-brand hover:text-brand' : isIngreso ? 'bg-green-50 dark:bg-green-950/40 text-green-500 hover:bg-green-100 dark:hover:bg-green-900/40' : 'bg-red-50 dark:bg-red-950/40 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/40'}`}
                                                 >
                                                     {isPagado ? <CheckCircle2 size={24} /> : isTarea ? <CheckCircle2 size={24} /> : isIngreso ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
                                                 </button>
 
                                                 <div className={`flex-1 min-w-0 py-1 ${isPagado ? 'line-through text-gray-400' : ''}`}>
-                                                    <p className={`font-bold leading-tight truncate text-sm ${isVencida ? 'text-red-600' : 'text-gray-800'}`}>
+                                                    <p className={`font-bold leading-tight truncate text-sm ${isVencida ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-gray-100'}`}>
                                                         {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre || actItem.observacion || 'Cobro rápido'}` : `Pago: ${actItem.observacion || 'Pago rápido'}`}
                                                     </p>
                                                     {isTarea && actItem.observacion && (
@@ -561,12 +563,12 @@ const Dashboard = () => {
                                                     )}
                                                     <div className="flex flex-wrap gap-1 mt-1 items-center">
                                                         {isVencida && diasRetraso(fechaRef) > 0 && (
-                                                            <span className="text-[10px] font-black bg-red-100 text-red-600 px-2 py-0.5 rounded-md">
+                                                            <span className="text-[10px] font-black bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-md">
                                                                 ⏰ {diasRetraso(fechaRef)} día{diasRetraso(fechaRef) !== 1 ? 's' : ''} de retraso
                                                             </span>
                                                         )}
                                                         {!isTarea && (
-                                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${isIngreso ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${isIngreso ? 'bg-green-100 dark:bg-green-950/60 text-green-700 dark:text-green-400' : 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400'}`}>
                                                                 {actItem.moneda === 'USD' ? '$' : 'Bs.'} {actItem.monto}
                                                             </span>
                                                         )}
@@ -575,12 +577,12 @@ const Dashboard = () => {
 
                                                 {isTarea ? (
                                                     <div className="flex flex-col gap-1 shrink-0">
-                                                        <button onClick={() => setEditTask(actItem)} className="p-2 bg-gray-50 rounded-xl text-gray-400 active:bg-gray-200 transition-colors"><PenSquare size={16} /></button>
-                                                        <button onClick={() => handleEliminar(actItem.id)} className="p-2 bg-red-50 rounded-xl text-red-500 active:bg-red-200 transition-colors"><Trash2 size={16} /></button>
+                                                        <button onClick={() => setEditTask(actItem)} className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl text-gray-400 dark:text-gray-300 active:bg-gray-200 dark:active:bg-gray-700 transition-colors"><PenSquare size={16} /></button>
+                                                        <button onClick={() => handleEliminar(actItem.id)} className="p-2 bg-red-50 dark:bg-red-950/40 rounded-xl text-red-500 dark:text-red-400 active:bg-red-200 dark:active:bg-red-900/60 transition-colors"><Trash2 size={16} /></button>
                                                     </div>
                                                 ) : (
                                                     <div className="flex flex-col gap-1 shrink-0">
-                                                        <button onClick={() => handleEliminarFinanza(actItem.id, actItem.tipoItem)} className="p-2 bg-red-50 rounded-xl text-red-400 active:bg-red-200 transition-colors" title="Eliminar"><Trash2 size={16} /></button>
+                                                        <button onClick={() => handleEliminarFinanza(actItem.id, actItem.tipoItem)} className="p-2 bg-red-50 dark:bg-red-950/40 rounded-xl text-red-400 dark:text-red-400 active:bg-red-200 dark:active:bg-red-900/60 transition-colors" title="Eliminar"><Trash2 size={16} /></button>
                                                     </div>
                                                 )}
                                             </div>
@@ -592,11 +594,11 @@ const Dashboard = () => {
                     </div>
 
                 ) : (
-                    <div className="bg-white rounded-3xl p-8 border border-gray-100 flex flex-col items-center shadow-sm text-center">
-                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${viendoRetrasados ? 'bg-red-50 text-red-300' : 'bg-gray-50 text-gray-300'}`}>
+                    <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 border border-gray-100 dark:border-gray-800 flex flex-col items-center shadow-sm text-center">
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${viendoRetrasados ? 'bg-red-50 dark:bg-red-950/40 text-red-300' : 'bg-gray-50 dark:bg-gray-800 text-gray-300 dark:text-gray-600'}`}>
                             {viendoRetrasados ? <CheckCircle2 size={24} /> : <CalIcon size={24} />}
                         </div>
-                        <p className="font-bold text-gray-500 text-sm">
+                        <p className="font-bold text-gray-500 dark:text-gray-300 text-sm">
                             {viendoRetrasados ? '¡Todo al día!' : 'El día está libre'}
                         </p>
                         <p className="text-xs text-gray-400 mt-1">
@@ -611,14 +613,14 @@ const Dashboard = () => {
                 <div className="mt-4 space-y-3">
                     <h3 className="text-xs font-black uppercase tracking-widest text-gray-400 px-1">Deudas Activas</h3>
                     {deudasData.map(deuda => (
-                        <div key={deuda.id} className="bg-white rounded-3xl p-4 shadow-sm border border-orange-100 flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center shrink-0">
+                        <div key={deuda.id} className="bg-white dark:bg-gray-900 rounded-3xl p-4 shadow-sm border border-orange-100 dark:border-orange-950/40 flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-2xl bg-orange-50 dark:bg-orange-950/40 flex items-center justify-center shrink-0">
                                 <span className="text-orange-500 font-black text-lg">D</span>
                             </div>
                             <div className="flex-1 min-w-0">
-                                <p className="font-bold text-sm text-gray-800 truncate">{deuda.concepto}</p>
+                                <p className="font-bold text-sm text-gray-800 dark:text-gray-100 truncate">{deuda.concepto}</p>
                                 {deuda.empresa_nombre && <p className="text-xs text-brand truncate">{deuda.empresa_nombre}</p>}
-                                <span className="text-xs font-black text-orange-600 bg-orange-50 px-2 py-0.5 rounded-md inline-block mt-1">
+                                <span className="text-xs font-black text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/40 px-2 py-0.5 rounded-md inline-block mt-1">
                                     Pendiente: Bs. {parseFloat(deuda.monto_total).toFixed(2)}
                                 </span>
                             </div>
@@ -632,6 +634,7 @@ const Dashboard = () => {
                     ))}
                 </div>
             )}
+
 
             {/* Modal amortizar deuda desde Dashboard */}
             {showAmortizarDeuda && (

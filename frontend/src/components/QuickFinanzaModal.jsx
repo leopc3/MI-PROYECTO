@@ -71,23 +71,23 @@ const QuickFinanzaModal = ({ tipo, selectedDate, onClose, onSaved }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-[200] p-4">
-            <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center z-[200] p-4">
+            <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border border-transparent dark:border-gray-800">
                 {/* Header */}
-                <div className={`px-6 pt-6 pb-4 ${isIngreso ? 'bg-green-50' : 'bg-red-50'}`}>
+                <div className={`px-6 pt-6 pb-4 ${isIngreso ? 'bg-green-50 dark:bg-green-950/40' : 'bg-red-50 dark:bg-red-950/40'}`}>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${isIngreso ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${isIngreso ? 'bg-green-100 dark:bg-green-900/50 text-green-600 dark:text-green-400' : 'bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400'}`}>
                                 {isIngreso ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
                             </div>
                             <div>
-                                <p className={`font-black text-base ${isIngreso ? 'text-green-700' : 'text-red-700'}`}>
+                                <p className={`font-black text-base ${isIngreso ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
                                     {isIngreso ? 'Cobro Rápido' : 'Pago Rápido'}
                                 </p>
-                                <p className="text-[11px] text-gray-400 font-medium capitalize">{fechaLabel}</p>
+                                <p className="text-[11px] text-gray-400 dark:text-gray-500 font-medium capitalize">{fechaLabel}</p>
                             </div>
                         </div>
-                        <button onClick={onClose} className="p-2 rounded-full text-gray-400 hover:bg-gray-100 transition-all">
+                        <button onClick={onClose} className="p-2 rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all">
                             <X size={18} />
                         </button>
                     </div>
@@ -97,7 +97,7 @@ const QuickFinanzaModal = ({ tipo, selectedDate, onClose, onSaved }) => {
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     {/* Concepto */}
                     <div>
-                        <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">
+                        <label className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">
                             {isIngreso ? 'Cliente / Concepto' : 'A quién / Concepto'}
                         </label>
                         <input
@@ -106,25 +106,25 @@ const QuickFinanzaModal = ({ tipo, selectedDate, onClose, onSaved }) => {
                             value={concepto}
                             onChange={e => setConcepto(e.target.value)}
                             placeholder={isIngreso ? 'Ej: ECOLAVA, Factura Marzo...' : 'Ej: Proveedor, Renta...'}
-                            className="w-full p-3 border border-gray-200 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-brand"
+                            className="w-full p-3 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm font-medium outline-none focus:ring-2 focus:ring-brand bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                         />
                     </div>
 
                     {/* Monto + Moneda */}
                     <div>
-                        <label className="block text-xs font-black text-gray-500 uppercase tracking-widest mb-1.5">Monto</label>
+                        <label className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-1.5">Monto</label>
                         <div className="flex gap-2">
                             {/* Toggle BOB / USD */}
-                            <div className="flex rounded-2xl border border-gray-200 overflow-hidden shrink-0">
+                            <div className="flex rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shrink-0 bg-gray-50 dark:bg-gray-800">
                                 <button
                                     type="button"
                                     onClick={() => setMoneda('BOB')}
-                                    className={`px-3 py-2 text-xs font-black transition-all ${moneda === 'BOB' ? 'bg-brand text-white' : 'text-gray-400 hover:bg-gray-50'}`}
+                                    className={`px-3 py-2 text-xs font-black transition-all ${moneda === 'BOB' ? 'bg-brand text-white' : 'text-gray-400 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                                 >Bs.</button>
                                 <button
                                     type="button"
                                     onClick={() => setMoneda('USD')}
-                                    className={`px-3 py-2 text-xs font-black transition-all ${moneda === 'USD' ? 'bg-brand text-white' : 'text-gray-400 hover:bg-gray-50'}`}
+                                    className={`px-3 py-2 text-xs font-black transition-all ${moneda === 'USD' ? 'bg-brand text-white' : 'text-gray-400 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                                 >$</button>
                             </div>
                             <input
@@ -134,16 +134,16 @@ const QuickFinanzaModal = ({ tipo, selectedDate, onClose, onSaved }) => {
                                 value={monto}
                                 onChange={e => setMonto(e.target.value)}
                                 placeholder="0.00"
-                                className="flex-1 p-3 border border-gray-200 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-brand"
+                                className="flex-1 p-3 border border-gray-200 dark:border-gray-700 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-brand bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                             />
                         </div>
                     </div>
 
-                    {error && <p className="text-xs font-bold text-red-500">{error}</p>}
+                    {error && <p className="text-xs font-bold text-red-500 dark:text-red-400">{error}</p>}
 
                     {/* Botones */}
                     <div className="flex gap-3 pt-1">
-                        <button type="button" onClick={onClose} className="flex-1 py-3 bg-gray-100 rounded-2xl font-bold text-gray-600 text-sm">
+                        <button type="button" onClick={onClose} className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-2xl font-bold text-gray-600 dark:text-gray-300 text-sm transition-colors">
                             Cancelar
                         </button>
                         <button

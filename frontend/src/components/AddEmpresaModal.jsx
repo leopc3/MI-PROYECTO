@@ -36,37 +36,37 @@ const AddEmpresaModal = ({ empresa, onClose, onEmpresaGuardada }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md md:max-w-xl p-6">
-                <h2 className="text-xl font-bold text-gray-800 mb-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-[100] p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl w-full max-w-md md:max-w-xl p-6 border border-transparent dark:border-gray-800">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                     {isEdit ? 'Editar Empresa' : 'Nueva Empresa'}
                 </h2>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Nombre de la Empresa</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Nombre de la Empresa</label>
                         <input
                             type="text"
                             value={nombre}
                             onChange={e => setNombre(e.target.value)}
-                            className="mt-1 w-full px-3 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-brand"
+                            className="mt-1 w-full px-3 py-3 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-brand bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700">Notas / Ideas</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Notas / Ideas</label>
                         <textarea
                             value={notas}
                             onChange={e => setNotas(e.target.value)}
                             rows={3}
-                            className="mt-1 w-full px-3 py-3 border rounded-xl outline-none focus:ring-2 focus:ring-brand resize-none"
+                            className="mt-1 w-full px-3 py-3 border border-gray-200 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-brand resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
                             placeholder="Ideas, observaciones, estrategias..."
                         />
                     </div>
                     <div className="flex gap-3 pt-2">
-                        <button type="button" onClick={onClose} className="flex-1 py-3 bg-gray-100 rounded-xl font-bold text-gray-600">
+                        <button type="button" onClick={onClose} className="flex-1 py-3 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-xl font-bold text-gray-700 dark:text-gray-300 transition-colors">
                             Cancelar
                         </button>
-                        <button type="submit" disabled={saving} className="flex-1 py-3 bg-brand text-white rounded-xl font-bold">
+                        <button type="submit" disabled={saving} className="flex-1 py-3 bg-brand hover:opacity-90 text-white rounded-xl font-bold transition-opacity">
                             {saving ? 'Guardando...' : isEdit ? 'Actualizar' : 'Guardar Empresa'}
                         </button>
                     </div>

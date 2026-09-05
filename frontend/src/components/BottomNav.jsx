@@ -37,7 +37,7 @@ const BottomNav = () => {
   if (location.pathname === '/login' || location.pathname.includes('/enlace/')) return null;
 
   return (
-    <div className="md:hidden fixed bottom-0 w-full bg-white border-t border-gray-200 flex justify-around pb-safe pt-1.5 px-1 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] z-50">
+    <div className="md:hidden fixed bottom-0 w-full bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex justify-around pb-safe pt-1.5 px-1 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] dark:shadow-[0_-2px_10px_rgba(0,0,0,0.4)] z-50 transition-colors duration-200">
       {navItems.map((item) => {
         const isActive = location.pathname === item.path;
         return (
@@ -47,11 +47,11 @@ const BottomNav = () => {
             className={`flex flex-col items-center px-1 py-1.5 rounded-xl transition-all min-w-0 relative
               ${isActive
                 ? 'text-brand'
-                : 'text-gray-400 hover:text-gray-600'
+                : 'text-gray-400 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-200'
               }`}
           >
             {item.path === '/' && vencidas > 0 && (
-              <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full border border-white animate-pulse"></span>
+              <span className="absolute top-1 right-2 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-gray-900 animate-pulse"></span>
             )}
             {item.icon}
             <span className={`text-[9px] mt-0.5 font-bold ${isActive ? 'text-brand' : 'text-gray-400'}`}>
@@ -62,6 +62,7 @@ const BottomNav = () => {
       })}
     </div>
   );
+
 };
 
 export default BottomNav;

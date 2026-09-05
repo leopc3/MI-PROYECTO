@@ -48,7 +48,7 @@ const WeekCalendar = ({ selectedDate, setSelectedDate }) => {
     }, []); // solo al montar
 
     return (
-        <div className="flex justify-between bg-white p-2 rounded-2xl shadow-sm border border-gray-100">
+        <div className="flex justify-between bg-white dark:bg-gray-900 p-2 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 transition-colors">
             {week.map((day, index) => {
                 const isSelected = day.toDateString() === selectedDate.toDateString();
                 const isToday = day.toDateString() === new Date().toDateString();
@@ -61,17 +61,20 @@ const WeekCalendar = ({ selectedDate, setSelectedDate }) => {
                             ${isSelected
                                 ? 'bg-brand text-white shadow-lg scale-105'
                                 : isToday
-                                    ? 'bg-blue-50 text-brand font-bold'
-                                    : 'text-gray-400 hover:bg-gray-50'
+                                    ? 'bg-orange-50 dark:bg-brand/20 text-brand font-bold'
+                                    : 'text-gray-400 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'
                             }`}
                     >
                         <span className="text-[9px] font-black uppercase mb-1">{dayLabels[index]}</span>
-                        <span className="text-sm font-bold">{day.getDate()}</span>
+                        <span className={`text-sm font-bold ${isSelected ? 'text-white' : isToday ? 'text-brand' : 'text-gray-700 dark:text-gray-200'}`}>
+                            {day.getDate()}
+                        </span>
                     </div>
                 );
             })}
         </div>
     );
+
 };
 
 export default WeekCalendar;
