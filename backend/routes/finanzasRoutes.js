@@ -13,6 +13,7 @@ router.post('/ingresos', crearIngreso);
 router.put('/ingresos/:id', actualizarIngreso);
 router.put('/ingresos/:id/serie', actualizarSerieIngreso);
 router.patch('/ingresos/:id/estado', toggleEstadoIngreso);
+router.patch('/ingresos/:id/toggle', toggleEstadoIngreso);
 router.delete('/ingresos/:id', eliminarIngreso);
 router.delete('/ingresos/:id/serie', eliminarSerieIngreso);
 
@@ -22,6 +23,7 @@ router.post('/egresos', crearEgreso);
 router.put('/egresos/:id', actualizarEgreso);
 router.put('/egresos/:id/serie', actualizarSerieEgreso);
 router.patch('/egresos/:id/estado', toggleEstadoEgreso);
+router.patch('/egresos/:id/toggle', toggleEstadoEgreso);
 router.delete('/egresos/:id', eliminarEgreso);
 router.delete('/egresos/:id/serie', eliminarSerieEgreso);
 
