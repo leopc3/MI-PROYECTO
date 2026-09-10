@@ -90,9 +90,13 @@ const Finanzas = () => {
         return fecha.getMonth() === selectedMonth && fecha.getFullYear() === selectedYear;
     });
 
-    const sumaMes = dataFiltrada.reduce((acc, curr) => {
-        return acc + parseFloat(curr.monto);
-    }, 0);
+    const sumaMes = dataFiltrada
+        .filter(item => item.estado !== 'pagado')
+        .reduce((acc, curr) => acc + parseFloat(curr.monto || 0), 0);
+
+    const sumaPagado = dataFiltrada
+        .filter(item => item.estado === 'pagado')
+        .reduce((acc, curr) => acc + parseFloat(curr.monto || 0), 0);
 
     return (
         <div className="p-4 md:p-8 max-w-5xl mx-auto bg-gray-50 dark:bg-gray-950 min-h-screen transition-colors duration-200">
@@ -121,8 +125,14 @@ const Finanzas = () => {
                         <p className={`text-3xl font-black ${isIng ? 'text-green-500' : 'text-red-500'} tracking-tighter leading-none`}>
                             Bs. {sumaMes.toFixed(2)}
                         </p>
-                        <p className="text-[10px] uppercase font-bold text-gray-400 mt-1">Total {isIng ? 'Ingresos' : 'Egresos'} en este mes</p>
+                        <p className="text-[10px] uppercase font-bold text-gray-400 mt-1">Pendiente {isIng ? 'de cobrar' : 'de pagar'} este mes</p>
                     </div>
+                    {sumaPagado > 0 && (
+                        <div className="text-right">
+                            <p className="text-lg font-black text-green-500">Bs. {sumaPagado.toFixed(2)}</p>
+                            <p className="text-[10px] uppercase font-bold text-gray-400">Ya {isIng ? 'cobrado' : 'pagado'}</p>
+                        </div>
+                    )}
                 </div>
             </div>
 
