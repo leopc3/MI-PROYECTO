@@ -74,23 +74,35 @@ const Dashboard = () => {
     const fetchData = async () => {
         setLoading(true);
         const token = localStorage.getItem('token');
-        try {
-            const [tarRes, finRes, deuRes, egRes, empRes] = await Promise.all([
-                axios.get('/api/tareas/dashboard', { headers: { 'Authorization': `Bearer ${token}` } }),
-                axios.get('/api/finanzas/ingresos', { headers: { 'Authorization': `Bearer ${token}` } }),
-                axios.get('/api/deudas?estado=activa', { headers: { 'Authorization': `Bearer ${token}` } }),
-                axios.get('/api/finanzas/egresos', { headers: { 'Authorization': `Bearer ${token}` } }),
-                axios.get('/api/empresas', { headers: { 'Authorization': `Bearer ${token}` } })
-            ]);
+        const headers = { 'Authorization': `Bearer ${token}` };
 
-            setTasks(tarRes.data);
-            setIngresosData(finRes.data);
-            setEgresosData(egRes.data);
-            const deudas = deuRes.data;
+        // Fetch each resource independently so one failure doesn't blank the whole dashboard
+        const [tarRes, finRes, deuRes, egRes, empRes] = await Promise.allSettled([
+            axios.get('/api/tareas/dashboard', { headers }),
+            axios.get('/api/finanzas/ingresos', { headers }),
+            axios.get('/api/deudas?estado=activa', { headers }),
+            axios.get('/api/finanzas/egresos', { headers }),
+            axios.get('/api/empresas', { headers })
+        ]);
+
+        if (tarRes.status === 'fulfilled') setTasks(tarRes.value.data);
+        else console.error('Error tareas:', tarRes.reason);
+
+        if (finRes.status === 'fulfilled') setIngresosData(finRes.value.data);
+        else console.error('Error ingresos:', finRes.reason);
+
+        if (deuRes.status === 'fulfilled') {
+            const deudas = deuRes.value.data;
             setDeudasData(deudas);
             setTotalDeuda(deudas.reduce((acc, curr) => acc + parseFloat(curr.monto_total || 0), 0));
-            setTotalEmpresas(empRes.data.length);
-        } catch (error) { console.error('Error cargando el dashboard:', error); }
+        } else console.error('Error deudas:', deuRes.reason);
+
+        if (egRes.status === 'fulfilled') setEgresosData(egRes.value.data);
+        else console.error('Error egresos:', egRes.reason);
+
+        if (empRes.status === 'fulfilled') setTotalEmpresas(empRes.value.data.length);
+        else console.error('Error empresas:', empRes.reason);
+
         setLoading(false);
     };
 
