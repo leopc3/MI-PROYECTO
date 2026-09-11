@@ -50,7 +50,7 @@ const login = async (req, res) => {
             return res.status(401).json({ message: 'Contraseña incorrecta' });
         }
 
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
         res.json({
             token,
@@ -63,5 +63,27 @@ const login = async (req, res) => {
     }
 };
 
+// Ruta de emergencia para resetear la contraseña del admin
+const resetAdminPassword = async (req, res) => {
+    try {
+        const newHash = await bcrypt.hash('admin123', 10);
+        const result = await pool.query(
+            "UPDATE usuarios SET password = $1 WHERE email = 'admin@ventasya.com' RETURNING id, email",
+            [newHash]
+        );
+        if (result.rowCount === 0) {
+            // Si no existe, crear el usuario
+            const insert = await pool.query(
+                "INSERT INTO usuarios (nombre, email, password) VALUES ('Admin', 'admin@ventasya.com', $1) RETURNING id, email",
+                [newHash]
+            );
+            return res.json({ ok: true, action: 'created', user: insert.rows[0] });
+        }
+        res.json({ ok: true, action: 'reset', user: result.rows[0] });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
 
-module.exports = { login };
+
+module.exports = { login, resetAdminPassword };
