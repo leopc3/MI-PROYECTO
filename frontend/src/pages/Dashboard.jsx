@@ -400,58 +400,6 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* Tarjeta de Ejercicio Diario (Lun-Sáb) */}
-            {rutinaHoy && (
-                <div className={`mb-6 rounded-3xl border p-4 shadow-sm transition-all ${
-                    rutinaHoy.estado === 'pendiente'
-                        ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/50'
-                        : 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/50'
-                }`}>
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className={`p-2.5 rounded-2xl ${rutinaHoy.estado === 'pendiente' ? 'bg-orange-100 dark:bg-orange-900/40' : 'bg-green-100 dark:bg-green-900/40'}`}>
-                                <Dumbbell size={22} className={rutinaHoy.estado === 'pendiente' ? 'text-orange-500' : 'text-green-500'} />
-                            </div>
-                            <div>
-                                <p className="font-black text-gray-800 dark:text-gray-100 text-sm">💪 Ejercicio Diario</p>
-                                <p className={`text-xs font-bold mt-0.5 ${rutinaHoy.estado === 'pendiente' ? 'text-orange-500' : 'text-green-500'}`}>
-                                    {rutinaHoy.estado === 'pendiente' && '⏳ Pendiente'}
-                                    {rutinaHoy.estado === 'gym' && '🏋️ ¡Fuiste al gym! Completado'}
-                                    {rutinaHoy.estado === 'rutina' && '🏠 ¡Rutina completa! Completado'}
-                                </p>
-                            </div>
-                        </div>
-                        {rutinaHoy.estado !== 'pendiente' && (
-                            <CheckCircle2 size={28} className="text-green-500" />
-                        )}
-                    </div>
-                    {rutinaHoy.estado === 'pendiente' && (
-                        <div className="flex gap-2 mt-3">
-                            <button
-                                onClick={async () => {
-                                    try {
-                                        const token = localStorage.getItem('token');
-                                        const res = await axios.patch(`/api/rutina/${rutinaHoy.id}/gym`, {}, {
-                                            headers: { Authorization: `Bearer ${token}` }
-                                        });
-                                        setRutinaHoy(res.data);
-                                    } catch (e) { console.error(e); }
-                                }}
-                                className="flex-1 py-2.5 rounded-2xl bg-green-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md shadow-green-200 dark:shadow-green-900/30"
-                            >
-                                🏋️ Fui al Gym
-                            </button>
-                            <button
-                                onClick={() => setShowRutinaModal(true)}
-                                className="flex-1 py-2.5 rounded-2xl bg-orange-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md shadow-orange-200 dark:shadow-orange-900/30"
-                            >
-                                🏠 Rutina en Casa
-                            </button>
-                        </div>
-                    )}
-                </div>
-            )}
-
             {/* Calendario con Toggle M/W */}
             <div className="mb-6">
                 <div className="flex justify-between items-center mb-3 px-1">
@@ -585,9 +533,60 @@ const Dashboard = () => {
                             ))}
                         </div>
                     )
-                ) : Object.keys(actividadesDelDiaPorGrupo).length > 0 ? (
+                ) : Object.keys(actividadesDelDiaPorGrupo).length > 0 || (rutinaHoy && selectDateStr === hoyStr) ? (
                     // ── VISTA AGRUPADA POR PROYECTO (DÍA) ──
                     <div className="space-y-6">
+                        {/* Tarjeta Ejercicio Diario — solo al ver el día de hoy */}
+                        {rutinaHoy && selectDateStr === hoyStr && (
+                            <div className={`rounded-3xl border p-4 shadow-sm transition-all ${
+                                rutinaHoy.estado === 'pendiente'
+                                    ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/50'
+                                    : 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/50'
+                            }`}>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2.5 rounded-2xl ${rutinaHoy.estado === 'pendiente' ? 'bg-orange-100 dark:bg-orange-900/40' : 'bg-green-100 dark:bg-green-900/40'}`}>
+                                            <Dumbbell size={22} className={rutinaHoy.estado === 'pendiente' ? 'text-orange-500' : 'text-green-500'} />
+                                        </div>
+                                        <div>
+                                            <p className="font-black text-gray-800 dark:text-gray-100 text-sm">💪 Ejercicio Diario</p>
+                                            <p className={`text-xs font-bold mt-0.5 ${rutinaHoy.estado === 'pendiente' ? 'text-orange-500' : 'text-green-500'}`}>
+                                                {rutinaHoy.estado === 'pendiente' && '⏳ Pendiente'}
+                                                {rutinaHoy.estado === 'gym' && '🏋️ ¡Fuiste al gym! Completado'}
+                                                {rutinaHoy.estado === 'rutina' && '🏠 ¡Rutina completa! Completado'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {rutinaHoy.estado !== 'pendiente' && (
+                                        <CheckCircle2 size={28} className="text-green-500" />
+                                    )}
+                                </div>
+                                {rutinaHoy.estado === 'pendiente' && (
+                                    <div className="flex gap-2 mt-3">
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    const token = localStorage.getItem('token');
+                                                    const res = await axios.patch(`/api/rutina/${rutinaHoy.id}/gym`, {}, {
+                                                        headers: { Authorization: `Bearer ${token}` }
+                                                    });
+                                                    setRutinaHoy(res.data);
+                                                } catch (e) { console.error(e); }
+                                            }}
+                                            className="flex-1 py-2.5 rounded-2xl bg-green-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                                        >
+                                            🏋️ Fui al Gym
+                                        </button>
+                                        <button
+                                            onClick={() => setShowRutinaModal(true)}
+                                            className="flex-1 py-2.5 rounded-2xl bg-orange-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                                        >
+                                            🏠 Rutina en Casa
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         {Object.entries(actividadesDelDiaPorGrupo).map(([key, grupo]) => (
                             <div key={key}>
                                 {/* Cabecera del grupo */}
