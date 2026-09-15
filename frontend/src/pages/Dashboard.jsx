@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Calendar as CalIcon, Search, LogOut, CheckCircle2, ChevronRight, AlertTriangle, PenSquare, Trash2, CalendarDays, TrendingUp, TrendingDown } from 'lucide-react';
+import { Calendar as CalIcon, Search, LogOut, CheckCircle2, ChevronRight, AlertTriangle, PenSquare, Trash2, CalendarDays, TrendingUp, TrendingDown, Dumbbell } from 'lucide-react';
 import WeekCalendar from '../components/WeekCalendar';
 import MonthCalendar from '../components/MonthCalendar';
 import AddTaskModal from '../components/AddTaskModal';
@@ -10,6 +10,7 @@ import GlobalSearchModal from '../components/GlobalSearchModal';
 import QuickFinanzaModal from '../components/QuickFinanzaModal';
 import AmortizarDeudaModal from '../components/AmortizarDeudaModal';
 import ThemeToggle from '../components/ThemeToggle';
+import RutinaModal from '../components/RutinaModal';
 
 const Dashboard = () => {
 
@@ -32,6 +33,8 @@ const Dashboard = () => {
     const [showSearch, setShowSearch] = useState(false);
     const [showCobroModal, setShowCobroModal] = useState(false);
     const [showPagoModal, setShowPagoModal] = useState(false);
+    const [rutinaHoy, setRutinaHoy] = useState(null);
+    const [showRutinaModal, setShowRutinaModal] = useState(false);
 
     // KPIs calculados en tiempo real (se descuentan y actualizan inmediatamente)
     const kpiData = useMemo(() => {
@@ -102,6 +105,15 @@ const Dashboard = () => {
 
         if (empRes.status === 'fulfilled') setTotalEmpresas(empRes.value.data.length);
         else console.error('Error empresas:', empRes.reason);
+
+        // Fetch rutina del día (solo Lun-Sáb)
+        const diaSemana = new Date().getDay();
+        if (diaSemana !== 0) {
+            try {
+                const rutRes = await axios.get('/api/rutina/hoy', { headers });
+                if (!rutRes.data.domingo) setRutinaHoy(rutRes.data);
+            } catch (e) { console.error('Error rutina:', e); }
+        }
 
         setLoading(false);
     };
@@ -387,6 +399,58 @@ const Dashboard = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Tarjeta de Ejercicio Diario (Lun-Sáb) */}
+            {rutinaHoy && (
+                <div className={`mb-6 rounded-3xl border p-4 shadow-sm transition-all ${
+                    rutinaHoy.estado === 'pendiente'
+                        ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/50'
+                        : 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/50'
+                }`}>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className={`p-2.5 rounded-2xl ${rutinaHoy.estado === 'pendiente' ? 'bg-orange-100 dark:bg-orange-900/40' : 'bg-green-100 dark:bg-green-900/40'}`}>
+                                <Dumbbell size={22} className={rutinaHoy.estado === 'pendiente' ? 'text-orange-500' : 'text-green-500'} />
+                            </div>
+                            <div>
+                                <p className="font-black text-gray-800 dark:text-gray-100 text-sm">💪 Ejercicio Diario</p>
+                                <p className={`text-xs font-bold mt-0.5 ${rutinaHoy.estado === 'pendiente' ? 'text-orange-500' : 'text-green-500'}`}>
+                                    {rutinaHoy.estado === 'pendiente' && '⏳ Pendiente'}
+                                    {rutinaHoy.estado === 'gym' && '🏋️ ¡Fuiste al gym! Completado'}
+                                    {rutinaHoy.estado === 'rutina' && '🏠 ¡Rutina completa! Completado'}
+                                </p>
+                            </div>
+                        </div>
+                        {rutinaHoy.estado !== 'pendiente' && (
+                            <CheckCircle2 size={28} className="text-green-500" />
+                        )}
+                    </div>
+                    {rutinaHoy.estado === 'pendiente' && (
+                        <div className="flex gap-2 mt-3">
+                            <button
+                                onClick={async () => {
+                                    try {
+                                        const token = localStorage.getItem('token');
+                                        const res = await axios.patch(`/api/rutina/${rutinaHoy.id}/gym`, {}, {
+                                            headers: { Authorization: `Bearer ${token}` }
+                                        });
+                                        setRutinaHoy(res.data);
+                                    } catch (e) { console.error(e); }
+                                }}
+                                className="flex-1 py-2.5 rounded-2xl bg-green-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md shadow-green-200 dark:shadow-green-900/30"
+                            >
+                                🏋️ Fui al Gym
+                            </button>
+                            <button
+                                onClick={() => setShowRutinaModal(true)}
+                                className="flex-1 py-2.5 rounded-2xl bg-orange-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md shadow-orange-200 dark:shadow-orange-900/30"
+                            >
+                                🏠 Rutina en Casa
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Calendario con Toggle M/W */}
             <div className="mb-6">
@@ -697,6 +761,16 @@ const Dashboard = () => {
                     onSaved={(nuevoItem) => {
                         setShowPagoModal(false);
                         setEgresosData(prev => [...prev, nuevoItem]);
+                    }}
+                />
+            )}
+            {showRutinaModal && rutinaHoy && (
+                <RutinaModal
+                    sesion={rutinaHoy}
+                    onClose={() => setShowRutinaModal(false)}
+                    onComplete={() => {
+                        setRutinaHoy(prev => ({ ...prev, estado: 'rutina' }));
+                        setShowRutinaModal(false);
                     }}
                 />
             )}

@@ -14,6 +14,7 @@ const proyectosRoutes = require('./routes/proyectosRoutes');
 const tareasRoutes = require('./routes/tareasRoutes');
 const finanzasRoutes = require('./routes/finanzasRoutes');
 const deudasRoutes = require('./routes/deudasRoutes');
+const rutinaRoutes = require('./routes/rutinaRoutes');
 
 // Usar Rutas (compatibilidad total: con y sin prefijo /api)
 app.use('/api/auth', authRoutes);
@@ -33,6 +34,9 @@ app.use('/finanzas', finanzasRoutes);
 
 app.use('/api/deudas', deudasRoutes);
 app.use('/deudas', deudasRoutes);
+
+app.use('/api/rutina', rutinaRoutes);
+app.use('/rutina', rutinaRoutes);
 
 app.get(['/', '/api', '/api/health'], (req, res) => {
   res.json({ ok: true, message: 'API de Ventas Ya funcionando 🚀' });
