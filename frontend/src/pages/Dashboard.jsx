@@ -438,7 +438,7 @@ const Dashboard = () => {
                     <div className="text-center py-10 text-gray-400 font-medium">Actualizando...</div>
                 ) : viendoRetrasados ? (
                     // ── VISTA AGRUPADA POR PROYECTO ──
-                    Object.keys(retrasadasPorProyecto).length === 0 ? (
+                    Object.keys(retrasadasPorProyecto).length === 0 && !(rutinaHoy?.estado === 'pendiente') ? (
                         <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 border border-gray-100 dark:border-gray-800 flex flex-col items-center shadow-sm text-center">
                             <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-green-50 dark:bg-green-950/40 text-green-400"><CheckCircle2 size={24} /></div>
                             <p className="font-bold text-gray-500 dark:text-gray-300 text-sm">¡Todo al día!</p>
@@ -446,6 +446,44 @@ const Dashboard = () => {
                         </div>
                     ) : (
                         <div className="space-y-6">
+                            {/* Rutina pendiente aparece en retrasados también */}
+                            {rutinaHoy?.estado === 'pendiente' && (
+                                <div className="rounded-3xl border p-4 shadow-sm bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/50">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2.5 rounded-2xl bg-orange-100 dark:bg-orange-900/40">
+                                                <Dumbbell size={22} className="text-orange-500" />
+                                            </div>
+                                            <div>
+                                                <p className="font-black text-gray-800 dark:text-gray-100 text-sm">💪 Ejercicio Diario</p>
+                                                <p className="text-xs font-bold mt-0.5 text-orange-500">⏳ Pendiente hoy</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2 mt-3">
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    const token = localStorage.getItem('token');
+                                                    const res = await axios.patch(`/api/rutina/${rutinaHoy.id}/gym`, {}, {
+                                                        headers: { Authorization: `Bearer ${token}` }
+                                                    });
+                                                    setRutinaHoy(res.data);
+                                                } catch (e) { console.error(e); }
+                                            }}
+                                            className="flex-1 py-2.5 rounded-2xl bg-green-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                                        >
+                                            🏋️ Fui al Gym
+                                        </button>
+                                        <button
+                                            onClick={() => setShowRutinaModal(true)}
+                                            className="flex-1 py-2.5 rounded-2xl bg-orange-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                                        >
+                                            🏠 Rutina en Casa
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                             {Object.entries(retrasadasPorProyecto).map(([key, grupo]) => (
                                 <div key={key}>
                                     {/* Cabecera del grupo */}
