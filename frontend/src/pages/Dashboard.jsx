@@ -32,6 +32,7 @@ const Dashboard = () => {
     const [editTask, setEditTask] = useState(null);
     const [showSearch, setShowSearch] = useState(false);
     const [showCobroModal, setShowCobroModal] = useState(false);
+    const [showPagoModal, setShowPagoModal] = useState(false);
     const [rutinasData, setRutinasData] = useState([]);
     const [showRutinaModal, setShowRutinaModal] = useState(false);
     const [sesionActivaModal, setSesionActivaModal] = useState(null);
