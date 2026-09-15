@@ -42,29 +42,28 @@ const obtenerRutinas = async (req, res) => {
             return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
         })();
 
-        // Auto-crear días de la semana actual (de Lunes a fechaParam, excluyendo Domingos)
+        // Auto-crear todos los días de Lunes a Sábado de la semana (6 días de entrenamiento)
         const [y, m, d] = fechaParam.split('-').map(Number);
         const dateObj = new Date(y, m - 1, d);
         const dayOfWeek = dateObj.getDay(); // 0=Dom, 1=Lun...
         const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        const mondayDate = new Date(y, m - 1, d - daysSinceMonday);
 
-        for (let i = daysSinceMonday; i >= 0; i--) {
-            const loopDate = new Date(y, m - 1, d - i);
-            if (loopDate.getDay() !== 0) { // No domingos
-                const loopStr = `${loopDate.getFullYear()}-${String(loopDate.getMonth()+1).padStart(2,'0')}-${String(loopDate.getDate()).padStart(2,'0')}`;
-                await pool.query(`
-                    INSERT INTO rutina_sesiones (fecha, estado, ejercicios_completados)
-                    VALUES ($1, 'pendiente', $2)
-                    ON CONFLICT (fecha) DO NOTHING;
-                `, [loopStr, JSON.stringify(EJERCICIOS_DEFAULT)]);
-            }
+        for (let i = 0; i < 6; i++) {
+            const loopDate = new Date(mondayDate.getFullYear(), mondayDate.getMonth(), mondayDate.getDate() + i);
+            const loopStr = `${loopDate.getFullYear()}-${String(loopDate.getMonth()+1).padStart(2,'0')}-${String(loopDate.getDate()).padStart(2,'0')}`;
+            await pool.query(`
+                INSERT INTO rutina_sesiones (fecha, estado, ejercicios_completados)
+                VALUES ($1, 'pendiente', $2)
+                ON CONFLICT (fecha) DO NOTHING;
+            `, [loopStr, JSON.stringify(EJERCICIOS_DEFAULT)]);
         }
 
-        // Consultar últimos 30 días con to_char para evitar desfase de timezone
+        // Consultar últimos 60 días con to_char para evitar desfase de timezone
         const result = await pool.query(`
             SELECT id, to_char(fecha, 'YYYY-MM-DD') as fecha_str, estado, ejercicios_completados, created_at
             FROM rutina_sesiones
-            WHERE fecha >= (CURRENT_DATE - INTERVAL '30 days')
+            WHERE fecha >= (CURRENT_DATE - INTERVAL '60 days')
             ORDER BY fecha DESC
         `);
 
