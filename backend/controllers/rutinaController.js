@@ -10,26 +10,76 @@ const EJERCICIOS_DEFAULT = {
     b4_emom: false
 };
 
-const obtenerOCrearHoy = async (req, res) => {
+let dbFixApplied = false;
+const ensureDbFix = async () => {
+    if (dbFixApplied) return;
     try {
-        const hoy = new Date();
-        const diaSemana = hoy.getDay();
-        if (diaSemana === 0) {
-            return res.json({ domingo: true, mensaje: 'Hoy es domingo. Dia de descanso.' });
+        // Asegurar que el lunes 2026-09-14 quede registrado como gym
+        await pool.query(`
+            INSERT INTO rutina_sesiones (fecha, estado, ejercicios_completados)
+            VALUES ('2026-09-14', 'gym', '{}'::jsonb)
+            ON CONFLICT (fecha) DO UPDATE SET estado = 'gym';
+        `);
+        // Resetear el martes 2026-09-15 a pendiente (se había marcado por error)
+        await pool.query(`
+            UPDATE rutina_sesiones 
+            SET estado = 'pendiente' 
+            WHERE fecha = '2026-09-15' AND id = 1;
+        `);
+        dbFixApplied = true;
+    } catch (e) {
+        console.error('Error aplicando fix de rutina lunes/martes:', e.message);
+    }
+};
+
+// GET /api/rutina?fecha=YYYY-MM-DD
+const obtenerRutinas = async (req, res) => {
+    try {
+        await ensureDbFix();
+
+        const fechaParam = req.query.fecha || (() => {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        })();
+
+        // Auto-crear días de la semana actual (de Lunes a fechaParam, excluyendo Domingos)
+        const [y, m, d] = fechaParam.split('-').map(Number);
+        const dateObj = new Date(y, m - 1, d);
+        const dayOfWeek = dateObj.getDay(); // 0=Dom, 1=Lun...
+        const daysSinceMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+
+        for (let i = daysSinceMonday; i >= 0; i--) {
+            const loopDate = new Date(y, m - 1, d - i);
+            if (loopDate.getDay() !== 0) { // No domingos
+                const loopStr = `${loopDate.getFullYear()}-${String(loopDate.getMonth()+1).padStart(2,'0')}-${String(loopDate.getDate()).padStart(2,'0')}`;
+                await pool.query(`
+                    INSERT INTO rutina_sesiones (fecha, estado, ejercicios_completados)
+                    VALUES ($1, 'pendiente', $2)
+                    ON CONFLICT (fecha) DO NOTHING;
+                `, [loopStr, JSON.stringify(EJERCICIOS_DEFAULT)]);
+            }
         }
-        const year = hoy.getFullYear();
-        const month = String(hoy.getMonth()+1).padStart(2,'0');
-        const day = String(hoy.getDate()).padStart(2,'0');
-        const fechaStr = year + '-' + month + '-' + day;
-        let result = await pool.query('SELECT * FROM rutina_sesiones WHERE fecha = $1', [fechaStr]);
-        if (result.rows.length === 0) {
-            result = await pool.query(
-                'INSERT INTO rutina_sesiones (fecha, estado, ejercicios_completados) VALUES ($1, $2, $3) RETURNING *',
-                [fechaStr, 'pendiente', JSON.stringify(EJERCICIOS_DEFAULT)]
-            );
-        }
-        res.json(result.rows[0]);
+
+        // Consultar últimos 30 días con to_char para evitar desfase de timezone
+        const result = await pool.query(`
+            SELECT id, to_char(fecha, 'YYYY-MM-DD') as fecha_str, estado, ejercicios_completados, created_at
+            FROM rutina_sesiones
+            WHERE fecha >= (CURRENT_DATE - INTERVAL '30 days')
+            ORDER BY fecha DESC
+        `);
+
+        const todas = result.rows;
+        const hoy = todas.find(r => r.fecha_str === fechaParam) || null;
+        const retrasadas = todas.filter(r => r.fecha_str < fechaParam && r.estado === 'pendiente');
+
+        res.json({
+            todas,
+            hoy,
+            retrasadas,
+            ...(hoy || {}) // compatibilidad
+        });
     } catch (error) {
+        console.error('Error en obtenerRutinas:', error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -38,7 +88,7 @@ const marcarGym = async (req, res) => {
     const { id } = req.params;
     try {
         const result = await pool.query(
-            "UPDATE rutina_sesiones SET estado = 'gym' WHERE id = $1 RETURNING *",
+            "UPDATE rutina_sesiones SET estado = 'gym' WHERE id = $1 RETURNING id, to_char(fecha, 'YYYY-MM-DD') as fecha_str, estado, ejercicios_completados, created_at",
             [id]
         );
         if (result.rows.length === 0) return res.status(404).json({ error: 'Sesion no encontrada' });
@@ -61,7 +111,7 @@ const toggleEjercicio = async (req, res) => {
         const ejercicios = { ...EJERCICIOS_DEFAULT, ...sesion.ejercicios_completados };
         ejercicios[ejercicio] = !ejercicios[ejercicio];
         const result = await pool.query(
-            'UPDATE rutina_sesiones SET ejercicios_completados = $1 WHERE id = $2 RETURNING *',
+            "UPDATE rutina_sesiones SET ejercicios_completados = $1 WHERE id = $2 RETURNING id, to_char(fecha, 'YYYY-MM-DD') as fecha_str, estado, ejercicios_completados, created_at",
             [JSON.stringify(ejercicios), id]
         );
         res.json(result.rows[0]);
@@ -74,7 +124,7 @@ const completarRutina = async (req, res) => {
     const { id } = req.params;
     try {
         const result = await pool.query(
-            "UPDATE rutina_sesiones SET estado = 'rutina' WHERE id = $1 RETURNING *",
+            "UPDATE rutina_sesiones SET estado = 'rutina' WHERE id = $1 RETURNING id, to_char(fecha, 'YYYY-MM-DD') as fecha_str, estado, ejercicios_completados, created_at",
             [id]
         );
         if (result.rows.length === 0) return res.status(404).json({ error: 'Sesion no encontrada' });
@@ -84,4 +134,19 @@ const completarRutina = async (req, res) => {
     }
 };
 
-module.exports = { obtenerOCrearHoy, marcarGym, toggleEjercicio, completarRutina };
+const resetearRutina = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await pool.query(
+            "UPDATE rutina_sesiones SET estado = 'pendiente' WHERE id = $1 RETURNING id, to_char(fecha, 'YYYY-MM-DD') as fecha_str, estado, ejercicios_completados, created_at",
+            [id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Sesion no encontrada' });
+        res.json(result.rows[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+module.exports = { obtenerRutinas, marcarGym, toggleEjercicio, completarRutina, resetearRutina };
+

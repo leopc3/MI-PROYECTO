@@ -32,9 +32,9 @@ const Dashboard = () => {
     const [editTask, setEditTask] = useState(null);
     const [showSearch, setShowSearch] = useState(false);
     const [showCobroModal, setShowCobroModal] = useState(false);
-    const [showPagoModal, setShowPagoModal] = useState(false);
-    const [rutinaHoy, setRutinaHoy] = useState(null);
+    const [rutinasData, setRutinasData] = useState([]);
     const [showRutinaModal, setShowRutinaModal] = useState(false);
+    const [sesionActivaModal, setSesionActivaModal] = useState(null);
 
     // KPIs calculados en tiempo real (se descuentan y actualizan inmediatamente)
     const kpiData = useMemo(() => {
@@ -106,16 +106,31 @@ const Dashboard = () => {
         if (empRes.status === 'fulfilled') setTotalEmpresas(empRes.value.data.length);
         else console.error('Error empresas:', empRes.reason);
 
-        // Fetch rutina del día (solo Lun-Sáb)
-        const diaSemana = new Date().getDay();
-        if (diaSemana !== 0) {
-            try {
-                const rutRes = await axios.get('/api/rutina/hoy', { headers });
-                if (!rutRes.data.domingo) setRutinaHoy(rutRes.data);
-            } catch (e) { console.error('Error rutina:', e); }
-        }
+        // Fetch rutinas (todas las recientes + auto-crea días de la semana actual)
+        const ahoraLocal = new Date();
+        const hoyLocalStr = `${ahoraLocal.getFullYear()}-${String(ahoraLocal.getMonth()+1).padStart(2,'0')}-${String(ahoraLocal.getDate()).padStart(2,'0')}`;
+        try {
+            const rutRes = await axios.get(`/api/rutina?fecha=${hoyLocalStr}`, { headers });
+            if (rutRes.data?.todas) {
+                setRutinasData(rutRes.data.todas);
+            }
+        } catch (e) { console.error('Error rutina:', e); }
 
         setLoading(false);
+    };
+
+    const handleMarcarGym = async (id) => {
+        const token = localStorage.getItem('token');
+        setRutinasData(prev => prev.map(r => r.id === id ? { ...r, estado: 'gym' } : r));
+        try {
+            const res = await axios.patch(`/api/rutina/${id}/gym`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setRutinasData(prev => prev.map(r => r.id === id ? res.data : r));
+        } catch (e) {
+            console.error('Error al marcar gym:', e);
+            fetchData();
+        }
     };
 
 
@@ -190,7 +205,17 @@ const Dashboard = () => {
     const ingresosVencidos = ingresosData.filter(i => (i.fecha_estimada?.split('T')[0] < hoyStr) && i.estado !== 'pagado');
     const egresosVencidos = egresosData.filter(e => (e.fecha_pago?.split('T')[0] < hoyStr) && e.estado !== 'pagado');
     
-    const totalRetrasos = tareasVencidas.length + ingresosVencidos.length + egresosVencidos.length;
+    // Rutinas retrasadas (días anteriores a hoy que quedaron pendientes)
+    const rutinasRetrasadas = rutinasData.filter(r => r.fecha_str < hoyStr && r.estado === 'pendiente');
+
+    // Sesión de ejercicio del día seleccionado en el calendario (Lunes a Sábado)
+    const [sy, sm, sd] = selectDateStr.split('-').map(Number);
+    const esDomingoSeleccionado = new Date(sy, sm - 1, sd).getDay() === 0;
+    const sesionDiaSeleccionado = !esDomingoSeleccionado 
+        ? rutinasData.find(r => r.fecha_str === selectDateStr) || null
+        : null;
+
+    const totalRetrasos = tareasVencidas.length + ingresosVencidos.length + egresosVencidos.length + rutinasRetrasadas.length;
 
     const listaAMostrar = viendoRetrasados ? [
         ...tareasVencidas.map(t => ({ ...t, tipoItem: 'tarea' })),
@@ -342,7 +367,8 @@ const Dashboard = () => {
                                 {[
                                     tareasVencidas.length > 0 && `${tareasVencidas.length} tareas`,
                                     ingresosVencidos.length > 0 && `${ingresosVencidos.length} cobros`,
-                                    egresosVencidos.length > 0 && `${egresosVencidos.length} pagos`
+                                    egresosVencidos.length > 0 && `${egresosVencidos.length} pagos`,
+                                    rutinasRetrasadas.length > 0 && `${rutinasRetrasadas.length} ejercicio${rutinasRetrasadas.length !== 1 ? 's' : ''}`
                                 ].filter(Boolean).join(', ')} pendientes.
                             </p>
                         </div>
@@ -438,7 +464,7 @@ const Dashboard = () => {
                     <div className="text-center py-10 text-gray-400 font-medium">Actualizando...</div>
                 ) : viendoRetrasados ? (
                     // ── VISTA AGRUPADA POR PROYECTO ──
-                    Object.keys(retrasadasPorProyecto).length === 0 && !(rutinaHoy?.estado === 'pendiente') ? (
+                    Object.keys(retrasadasPorProyecto).length === 0 && rutinasRetrasadas.length === 0 ? (
                         <div className="bg-white dark:bg-gray-900 rounded-3xl p-8 border border-gray-100 dark:border-gray-800 flex flex-col items-center shadow-sm text-center">
                             <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-green-50 dark:bg-green-950/40 text-green-400"><CheckCircle2 size={24} /></div>
                             <p className="font-bold text-gray-500 dark:text-gray-300 text-sm">¡Todo al día!</p>
@@ -446,44 +472,53 @@ const Dashboard = () => {
                         </div>
                     ) : (
                         <div className="space-y-6">
-                            {/* Rutina pendiente aparece en retrasados también */}
-                            {rutinaHoy?.estado === 'pendiente' && (
-                                <div className="rounded-3xl border p-4 shadow-sm bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/50">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2.5 rounded-2xl bg-orange-100 dark:bg-orange-900/40">
-                                                <Dumbbell size={22} className="text-orange-500" />
-                                            </div>
-                                            <div>
-                                                <p className="font-black text-gray-800 dark:text-gray-100 text-sm">💪 Ejercicio Diario</p>
-                                                <p className="text-xs font-bold mt-0.5 text-orange-500">⏳ Pendiente hoy</p>
+                            {/* Rutinas retrasadas (días pasados no completados) */}
+                            {rutinasRetrasadas.map(rut => {
+                                const [ry, rm, rd] = rut.fecha_str.split('-').map(Number);
+                                const fObj = new Date(ry, rm - 1, rd);
+                                const fLabel = fObj.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' });
+                                const dias = diasRetraso(rut.fecha_str);
+
+                                return (
+                                    <div key={`rutina-retrasada-${rut.id}`} className="rounded-3xl border p-4 shadow-sm bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/50">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2.5 rounded-2xl bg-orange-100 dark:bg-orange-900/40">
+                                                    <Dumbbell size={22} className="text-orange-500" />
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center gap-2">
+                                                        <p className="font-black text-gray-800 dark:text-gray-100 text-sm">💪 Ejercicio Diario</p>
+                                                        <span className="text-[10px] font-black bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-md">
+                                                            ⏰ {dias > 0 ? `${dias} día${dias !== 1 ? 's' : ''} de retraso` : 'Retrasado'}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-xs font-bold mt-0.5 text-orange-500 capitalize">
+                                                        📅 {fLabel} — ⏳ Pendiente
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
+                                        <div className="flex gap-2 mt-3">
+                                            <button
+                                                onClick={() => handleMarcarGym(rut.id)}
+                                                className="flex-1 py-2.5 rounded-2xl bg-green-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md shadow-green-200 dark:shadow-green-900/30"
+                                            >
+                                                🏋️ Fui al Gym
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setSesionActivaModal(rut);
+                                                    setShowRutinaModal(true);
+                                                }}
+                                                className="flex-1 py-2.5 rounded-2xl bg-orange-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md shadow-orange-200 dark:shadow-orange-900/30"
+                                            >
+                                                🏠 Rutina en Casa
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="flex gap-2 mt-3">
-                                        <button
-                                            onClick={async () => {
-                                                try {
-                                                    const token = localStorage.getItem('token');
-                                                    const res = await axios.patch(`/api/rutina/${rutinaHoy.id}/gym`, {}, {
-                                                        headers: { Authorization: `Bearer ${token}` }
-                                                    });
-                                                    setRutinaHoy(res.data);
-                                                } catch (e) { console.error(e); }
-                                            }}
-                                            className="flex-1 py-2.5 rounded-2xl bg-green-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-                                        >
-                                            🏋️ Fui al Gym
-                                        </button>
-                                        <button
-                                            onClick={() => setShowRutinaModal(true)}
-                                            className="flex-1 py-2.5 rounded-2xl bg-orange-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all"
-                                        >
-                                            🏠 Rutina en Casa
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
+                                );
+                            })}
                             {Object.entries(retrasadasPorProyecto).map(([key, grupo]) => (
                                 <div key={key}>
                                     {/* Cabecera del grupo */}
@@ -571,53 +606,48 @@ const Dashboard = () => {
                             ))}
                         </div>
                     )
-                ) : Object.keys(actividadesDelDiaPorGrupo).length > 0 || (rutinaHoy && selectDateStr === hoyStr) ? (
+                ) : Object.keys(actividadesDelDiaPorGrupo).length > 0 || sesionDiaSeleccionado ? (
                     // ── VISTA AGRUPADA POR PROYECTO (DÍA) ──
                     <div className="space-y-6">
-                        {/* Tarjeta Ejercicio Diario — solo al ver el día de hoy */}
-                        {rutinaHoy && selectDateStr === hoyStr && (
+                        {/* Tarjeta Ejercicio Diario — día seleccionado en el calendario (Lunes a Sábado) */}
+                        {sesionDiaSeleccionado && (
                             <div className={`rounded-3xl border p-4 shadow-sm transition-all ${
-                                rutinaHoy.estado === 'pendiente'
+                                sesionDiaSeleccionado.estado === 'pendiente'
                                     ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/50'
                                     : 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/50'
                             }`}>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className={`p-2.5 rounded-2xl ${rutinaHoy.estado === 'pendiente' ? 'bg-orange-100 dark:bg-orange-900/40' : 'bg-green-100 dark:bg-green-900/40'}`}>
-                                            <Dumbbell size={22} className={rutinaHoy.estado === 'pendiente' ? 'text-orange-500' : 'text-green-500'} />
+                                        <div className={`p-2.5 rounded-2xl ${sesionDiaSeleccionado.estado === 'pendiente' ? 'bg-orange-100 dark:bg-orange-900/40' : 'bg-green-100 dark:bg-green-900/40'}`}>
+                                            <Dumbbell size={22} className={sesionDiaSeleccionado.estado === 'pendiente' ? 'text-orange-500' : 'text-green-500'} />
                                         </div>
                                         <div>
                                             <p className="font-black text-gray-800 dark:text-gray-100 text-sm">💪 Ejercicio Diario</p>
-                                            <p className={`text-xs font-bold mt-0.5 ${rutinaHoy.estado === 'pendiente' ? 'text-orange-500' : 'text-green-500'}`}>
-                                                {rutinaHoy.estado === 'pendiente' && '⏳ Pendiente'}
-                                                {rutinaHoy.estado === 'gym' && '🏋️ ¡Fuiste al gym! Completado'}
-                                                {rutinaHoy.estado === 'rutina' && '🏠 ¡Rutina completa! Completado'}
+                                            <p className={`text-xs font-bold mt-0.5 ${sesionDiaSeleccionado.estado === 'pendiente' ? 'text-orange-500' : 'text-green-500'}`}>
+                                                {sesionDiaSeleccionado.estado === 'pendiente' && (selectDateStr === hoyStr ? '⏳ Pendiente hoy' : '⏳ Pendiente')}
+                                                {sesionDiaSeleccionado.estado === 'gym' && '🏋️ ¡Fuiste al gym! Completado'}
+                                                {sesionDiaSeleccionado.estado === 'rutina' && '🏠 ¡Rutina completa! Completado'}
                                             </p>
                                         </div>
                                     </div>
-                                    {rutinaHoy.estado !== 'pendiente' && (
+                                    {sesionDiaSeleccionado.estado !== 'pendiente' && (
                                         <CheckCircle2 size={28} className="text-green-500" />
                                     )}
                                 </div>
-                                {rutinaHoy.estado === 'pendiente' && (
+                                {sesionDiaSeleccionado.estado === 'pendiente' && (
                                     <div className="flex gap-2 mt-3">
                                         <button
-                                            onClick={async () => {
-                                                try {
-                                                    const token = localStorage.getItem('token');
-                                                    const res = await axios.patch(`/api/rutina/${rutinaHoy.id}/gym`, {}, {
-                                                        headers: { Authorization: `Bearer ${token}` }
-                                                    });
-                                                    setRutinaHoy(res.data);
-                                                } catch (e) { console.error(e); }
-                                            }}
-                                            className="flex-1 py-2.5 rounded-2xl bg-green-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                                            onClick={() => handleMarcarGym(sesionDiaSeleccionado.id)}
+                                            className="flex-1 py-2.5 rounded-2xl bg-green-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md shadow-green-200 dark:shadow-green-900/30"
                                         >
                                             🏋️ Fui al Gym
                                         </button>
                                         <button
-                                            onClick={() => setShowRutinaModal(true)}
-                                            className="flex-1 py-2.5 rounded-2xl bg-orange-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+                                            onClick={() => {
+                                                setSesionActivaModal(sesionDiaSeleccionado);
+                                                setShowRutinaModal(true);
+                                            }}
+                                            className="flex-1 py-2.5 rounded-2xl bg-orange-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md shadow-orange-200 dark:shadow-orange-900/30"
                                         >
                                             🏠 Rutina en Casa
                                         </button>
@@ -801,13 +831,17 @@ const Dashboard = () => {
                     }}
                 />
             )}
-            {showRutinaModal && rutinaHoy && (
+            {showRutinaModal && sesionActivaModal && (
                 <RutinaModal
-                    sesion={rutinaHoy}
-                    onClose={() => setShowRutinaModal(false)}
-                    onComplete={() => {
-                        setRutinaHoy(prev => ({ ...prev, estado: 'rutina' }));
+                    sesion={sesionActivaModal}
+                    onClose={() => {
                         setShowRutinaModal(false);
+                        setSesionActivaModal(null);
+                    }}
+                    onComplete={() => {
+                        setRutinasData(prev => prev.map(r => r.id === sesionActivaModal.id ? { ...r, estado: 'rutina' } : r));
+                        setShowRutinaModal(false);
+                        setSesionActivaModal(null);
                     }}
                 />
             )}
