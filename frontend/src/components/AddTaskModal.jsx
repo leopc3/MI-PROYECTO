@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import axios from 'axios';
+import { Clock } from 'lucide-react';
 
 const AddTaskModal = ({ selectedDate, tituloInicial, onClose, onSaved }) => {
     const [titulo, setTitulo] = useState(tituloInicial || '');
     const [obs, setObs] = useState('');
+    const [hora, setHora] = useState('');
     const [proyectos, setProyectos] = useState([]);
     const [proyectoId, setProyectoId] = useState('');
     const [proyectosLoaded, setProyectosLoaded] = useState(false);
@@ -32,6 +34,7 @@ const AddTaskModal = ({ selectedDate, tituloInicial, onClose, onSaved }) => {
                 observacion: obs,
                 creado_por: 'admin',
                 proyecto_id: proyectoId || null,
+                hora: hora || null
             });
             onSaved();
             onClose();
@@ -63,6 +66,31 @@ const AddTaskModal = ({ selectedDate, tituloInicial, onClose, onSaved }) => {
                     className="w-full p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 rounded-xl outline-none focus:ring-2 focus:ring-brand resize-none"
                     rows={2}
                 />
+
+                {/* Hora opcional */}
+                <div>
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                        <Clock size={13} className="text-brand" /> Hora (opcional — aparecerá arriba)
+                    </label>
+                    <div className="flex items-center gap-2">
+                        <input
+                            type="time"
+                            value={hora}
+                            onChange={e => setHora(e.target.value)}
+                            className="flex-1 p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-800 dark:text-white rounded-xl outline-none focus:ring-2 focus:ring-brand text-sm"
+                        />
+                        {hora && (
+                            <button
+                                type="button"
+                                onClick={() => setHora('')}
+                                className="px-3 py-3 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-950/40 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                                title="Quitar hora"
+                            >
+                                Quitar
+                            </button>
+                        )}
+                    </div>
+                </div>
 
                 {/* Selector de proyecto (opcional) */}
                 <div>

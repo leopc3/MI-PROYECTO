@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Clock } from 'lucide-react';
 
 const EditTaskModal = ({ tarea, onClose, onSaved }) => {
     const [titulo, setTitulo] = useState(tarea.titulo);
     const [obs, setObs] = useState(tarea.observacion || '');
     const [fecha, setFecha] = useState(tarea.fecha_asignada ? tarea.fecha_asignada.split('T')[0] : '');
+    const [hora, setHora] = useState(tarea.hora || '');
     const [proyectos, setProyectos] = useState([]);
     const [proyectoId, setProyectoId] = useState(tarea.proyecto_id || '');
     const [proyectosLoaded, setProyectosLoaded] = useState(false);
@@ -34,6 +36,7 @@ const EditTaskModal = ({ tarea, onClose, onSaved }) => {
                 fecha_asignada: fecha,
                 observacion: obs,
                 proyecto_id: proyectoId || null,
+                hora: hora || null
             });
             onSaved();
             onClose();
@@ -54,13 +57,43 @@ const EditTaskModal = ({ tarea, onClose, onSaved }) => {
                     className="w-full p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-brand font-medium text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                 />
 
-                <input
-                    type="date"
-                    required
-                    value={fecha}
-                    onChange={e => setFecha(e.target.value)}
-                    className="w-full p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-brand text-gray-600 dark:text-gray-200"
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">
+                            Fecha Asignada
+                        </label>
+                        <input
+                            type="date"
+                            required
+                            value={fecha}
+                            onChange={e => setFecha(e.target.value)}
+                            className="w-full p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-brand text-gray-600 dark:text-gray-200 text-sm"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                            <Clock size={12} className="text-brand" /> Hora (opcional — saldrá arriba)
+                        </label>
+                        <div className="flex items-center gap-1.5">
+                            <input
+                                type="time"
+                                value={hora}
+                                onChange={e => setHora(e.target.value)}
+                                className="flex-1 p-3 border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-xl outline-none focus:ring-2 focus:ring-brand text-gray-600 dark:text-gray-200 text-sm"
+                            />
+                            {hora && (
+                                <button
+                                    type="button"
+                                    onClick={() => setHora('')}
+                                    className="p-3 text-xs font-bold text-red-500 bg-red-50 dark:bg-red-950/40 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors shrink-0"
+                                    title="Quitar hora"
+                                >
+                                    ✕
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
 
                 <textarea
                     placeholder="Observaciones o detalles..."

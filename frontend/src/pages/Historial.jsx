@@ -1,7 +1,16 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Search, Calendar, Building2, CheckCircle2 } from 'lucide-react';
+import { Search, Calendar, Building2, CheckCircle2, Clock } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
+
+const formatearHora = (horaStr) => {
+    if (!horaStr) return '';
+    const [h, m] = horaStr.split(':').map(Number);
+    if (isNaN(h) || isNaN(m)) return horaStr;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 === 0 ? 12 : h % 12;
+    return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+};
 
 const Historial = () => {
     const [originalTasks, setOriginalTasks] = useState([]);
@@ -90,7 +99,14 @@ const Historial = () => {
                             <div className="flex items-start gap-3">
                                 <CheckCircle2 size={20} className="text-green-500 shrink-0 mt-0.5" />
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-bold text-gray-500 dark:text-gray-400 line-through truncate">{tarea.titulo}</p>
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        {tarea.hora && (
+                                            <span className="text-[10px] font-black bg-brand/10 dark:bg-brand/20 text-brand px-1.5 py-0.5 rounded flex items-center gap-0.5 shrink-0">
+                                                <Clock size={10} /> {formatearHora(tarea.hora)}
+                                            </span>
+                                        )}
+                                        <p className="font-bold text-gray-500 dark:text-gray-400 line-through truncate">{tarea.titulo}</p>
+                                    </div>
                                     {tarea.observacion && (
                                         <p className="text-xs text-gray-400 dark:text-gray-500 italic mt-0.5 truncate">{tarea.observacion}</p>
                                     )}

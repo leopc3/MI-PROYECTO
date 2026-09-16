@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Calendar as CalIcon, Search, LogOut, CheckCircle2, ChevronRight, AlertTriangle, PenSquare, Trash2, CalendarDays, TrendingUp, TrendingDown, Dumbbell } from 'lucide-react';
+import { Calendar as CalIcon, Search, LogOut, CheckCircle2, ChevronRight, AlertTriangle, PenSquare, Trash2, CalendarDays, TrendingUp, TrendingDown, Dumbbell, Clock } from 'lucide-react';
 import WeekCalendar from '../components/WeekCalendar';
 import MonthCalendar from '../components/MonthCalendar';
 import AddTaskModal from '../components/AddTaskModal';
@@ -240,6 +240,26 @@ const Dashboard = () => {
         const hoyD = new Date(hoyStr + 'T00:00:00');
         return Math.floor((hoyD - fecha) / (1000 * 60 * 60 * 24));
     };
+
+    // Formatear hora (ej: "10:00" -> "10:00 AM", "22:00" -> "10:00 PM")
+    const formatearHora = (horaStr) => {
+        if (!horaStr) return '';
+        const [h, m] = horaStr.split(':').map(Number);
+        if (isNaN(h) || isNaN(m)) return horaStr;
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        const h12 = h % 12 === 0 ? 12 : h % 12;
+        return `${h12}:${String(m).padStart(2, '0')} ${ampm}`;
+    };
+
+    // Comparador: tareas con hora salen arriba ordenadas por hora, luego las sin hora
+    const ordenarPorHora = (a, b) => {
+        const horaA = a.hora;
+        const horaB = b.hora;
+        if (horaA && horaB) return horaA.localeCompare(horaB);
+        if (horaA && !horaB) return -1;
+        if (!horaA && horaB) return 1;
+        return 0;
+    };
     
     const hoyStr2 = hoyStr; // alias para uso en lambdas
     const tareasVencidas = tasks.filter(t => t.fecha_asignada?.split('T')[0] < hoyStr);
@@ -265,12 +285,16 @@ const Dashboard = () => {
     const totalRetrasos = tareasVencidas.length + ingresosVencidos.length + egresosVencidos.length + rutinasRetrasadas.length;
 
     const listaAMostrar = viendoRetrasados ? [
-        ...tareasVencidas.map(t => ({ ...t, tipoItem: 'tarea' })),
+        ...tareasVencidas.map(t => ({ ...t, tipoItem: 'tarea' })).sort(ordenarPorHora),
         ...ingresosVencidos.map(i => ({ ...i, tipoItem: 'ingreso' })),
         ...egresosVencidos.map(e => ({ ...e, tipoItem: 'egreso' }))
-    ] : actividadesDelDia;
+    ] : [
+        ...tareasDelDia.map(t => ({ ...t, tipoItem: 'tarea' })).sort(ordenarPorHora),
+        ...ingresosDelDia.map(i => ({ ...i, tipoItem: 'ingreso' })),
+        ...egresosDelDia.map(e => ({ ...e, tipoItem: 'egreso' }))
+    ];
 
-    // Agrupar retrasadas por proyecto
+    // Agrupar retrasadas por proyecto (tareas con hora arriba)
     const retrasadasPorProyecto = (() => {
         if (!viendoRetrasados) return {};
         const grupos = {};
@@ -287,10 +311,17 @@ const Dashboard = () => {
             ...egresosVencidos.map(e => ({ ...e, tipoItem: 'egreso' }))
         ];
         if (finItems.length > 0) grupos['__finanzas__'] = { label: 'Cobros y Pagos Vencidos', items: finItems };
+
+        // Ordenar cada grupo: tareas con hora arriba
+        Object.keys(grupos).forEach(k => {
+            if (k !== '__finanzas__') {
+                grupos[k].items.sort(ordenarPorHora);
+            }
+        });
         return grupos;
     })();
 
-    // Agrupar actividades del día por proyecto (mismo patrón)
+    // Agrupar actividades del día por proyecto (tareas con hora arriba)
     const actividadesDelDiaPorGrupo = (() => {
         if (viendoRetrasados) return {};
         const grupos = {};
@@ -307,8 +338,16 @@ const Dashboard = () => {
             ...egresosDelDia.map(e => ({ ...e, tipoItem: 'egreso' }))
         ];
         if (finItems.length > 0) grupos['__finanzas__'] = { label: 'Cobros y Pagos del Día', items: finItems };
+
+        // Ordenar cada grupo: tareas con hora arriba
+        Object.keys(grupos).forEach(k => {
+            if (k !== '__finanzas__') {
+                grupos[k].items.sort(ordenarPorHora);
+            }
+        });
         return grupos;
     })();
+
 
     const handleToggleFinanza = async (id, tipo) => {
         const token = localStorage.getItem('token');
@@ -609,9 +648,16 @@ const Dashboard = () => {
                                                     </button>
 
                                                     <div className={`flex-1 min-w-0 py-1 ${isPagado ? 'line-through text-gray-400' : ''}`}>
-                                                        <p className={`font-bold leading-tight truncate text-sm ${isVencida ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-gray-100'}`}>
-                                                            {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre || actItem.observacion || 'Cobro rápido'}` : `Pago: ${actItem.observacion || 'Pago rápido'}`}
-                                                        </p>
+                                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                                            {isTarea && actItem.hora && (
+                                                                <span className="text-[11px] font-black bg-brand/10 dark:bg-brand/25 text-brand px-2 py-0.5 rounded-lg flex items-center gap-1 shrink-0">
+                                                                    <Clock size={12} /> {formatearHora(actItem.hora)}
+                                                                </span>
+                                                            )}
+                                                            <p className={`font-bold leading-tight truncate text-sm ${isVencida ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-gray-100'}`}>
+                                                                {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre || actItem.observacion || 'Cobro rápido'}` : `Pago: ${actItem.observacion || 'Pago rápido'}`}
+                                                            </p>
+                                                        </div>
                                                         {isTarea && actItem.observacion && (
                                                             <p className="text-[11px] italic text-gray-400 mt-0.5 line-clamp-1">{actItem.observacion}</p>
                                                         )}
@@ -741,9 +787,16 @@ const Dashboard = () => {
                                                 </button>
 
                                                 <div className={`flex-1 min-w-0 py-1 ${isPagado ? 'line-through text-gray-400' : ''}`}>
-                                                    <p className={`font-bold leading-tight truncate text-sm ${isVencida ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-gray-100'}`}>
-                                                        {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre || actItem.observacion || 'Cobro rápido'}` : `Pago: ${actItem.observacion || 'Pago rápido'}`}
-                                                    </p>
+                                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                                        {isTarea && actItem.hora && (
+                                                            <span className="text-[11px] font-black bg-brand/10 dark:bg-brand/25 text-brand px-2 py-0.5 rounded-lg flex items-center gap-1 shrink-0">
+                                                                <Clock size={12} /> {formatearHora(actItem.hora)}
+                                                            </span>
+                                                        )}
+                                                        <p className={`font-bold leading-tight truncate text-sm ${isVencida ? 'text-red-600 dark:text-red-400' : 'text-gray-800 dark:text-gray-100'}`}>
+                                                            {isTarea ? actItem.titulo : isIngreso ? `Cobro: ${actItem.empresa_nombre || actItem.observacion || 'Cobro rápido'}` : `Pago: ${actItem.observacion || 'Pago rápido'}`}
+                                                        </p>
+                                                    </div>
                                                     {isTarea && actItem.observacion && (
                                                         <p className="text-[11px] italic text-gray-400 mt-0.5 line-clamp-1">{actItem.observacion}</p>
                                                     )}
