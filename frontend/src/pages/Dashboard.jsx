@@ -266,8 +266,10 @@ const Dashboard = () => {
     const ingresosVencidos = ingresosData.filter(i => (i.fecha_estimada?.split('T')[0] < hoyStr) && i.estado !== 'pagado');
     const egresosVencidos = egresosData.filter(e => (e.fecha_pago?.split('T')[0] < hoyStr) && e.estado !== 'pagado');
     
-    // Rutinas retrasadas (días anteriores a hoy que quedaron pendientes)
-    const rutinasRetrasadas = rutinasData.filter(r => r.fecha_str < hoyStr && r.estado === 'pendiente');
+    // Rutinas retrasadas: solo el día pendiente MÁS RECIENTE (no acumular todos los días pasados)
+    const todasRutinasRetrasadas = rutinasData.filter(r => r.fecha_str < hoyStr && r.estado === 'pendiente')
+        .sort((a, b) => b.fecha_str.localeCompare(a.fecha_str)); // más reciente primero
+    const rutinasRetrasadas = todasRutinasRetrasadas.slice(0, 1); // solo mostrar el más reciente
 
     // Sesión de ejercicio del día seleccionado en el calendario (Lunes a Sábado)
     const [sy, sm, sd] = selectDateStr.split('-').map(Number);
@@ -568,38 +570,36 @@ const Dashboard = () => {
                                 const dias = diasRetraso(rut.fecha_str);
 
                                 return (
-                                    <div key={`rutina-retrasada-${rut.id}`} className="rounded-3xl border p-4 shadow-sm bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/50">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2.5 rounded-2xl bg-orange-100 dark:bg-orange-900/40">
-                                                    <Dumbbell size={22} className="text-orange-500" />
-                                                </div>
-                                                <div>
-                                                    <div className="flex items-center gap-2">
-                                                        <p className="font-black text-gray-800 dark:text-gray-100 text-sm">💪 Ejercicio Diario</p>
-                                                        <span className="text-[10px] font-black bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-md">
-                                                            ⏰ {dias > 0 ? `${dias} día${dias !== 1 ? 's' : ''} de retraso` : 'Retrasado'}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-xs font-bold mt-0.5 text-orange-500 capitalize">
-                                                        📅 {fLabel} — ⏳ Pendiente
-                                                    </p>
-                                                </div>
+                                    <div key={`rutina-retrasada-${rut.id}`} className="bg-white dark:bg-gray-900 p-4 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden flex gap-4 items-center transition-all">
+                                        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-orange-400" />
+                                        <button
+                                            onClick={() => handleAbrirRutinaModal(rut)}
+                                            className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-orange-50 dark:bg-orange-950/40 text-orange-500 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-all"
+                                        >
+                                            <Dumbbell size={22} />
+                                        </button>
+                                        <div className="flex-1 min-w-0 py-1">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <p className="font-bold leading-tight truncate text-sm text-orange-600 dark:text-orange-400">💪 Ejercicio Diario</p>
+                                            </div>
+                                            <div className="flex flex-wrap gap-1 mt-1 items-center">
+                                                <span className="text-[10px] font-black bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 px-2 py-0.5 rounded-md">
+                                                    ⏰ {dias > 0 ? `${dias} día${dias !== 1 ? 's' : ''} de retraso` : 'Retrasado'}
+                                                </span>
+                                                <span className="text-[10px] text-gray-400 dark:text-gray-500 font-bold capitalize">{fLabel}</span>
                                             </div>
                                         </div>
-                                        <div className="flex gap-2 mt-3">
+                                        <div className="flex flex-col gap-1 shrink-0">
                                             <button
                                                 onClick={() => handleMarcarGym(rut.id, rut.fecha_str)}
-                                                className="flex-1 py-2.5 rounded-2xl bg-green-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md shadow-green-200 dark:shadow-green-900/30"
-                                            >
-                                                🏋️ Fui al Gym
-                                            </button>
+                                                className="px-3 py-1.5 rounded-xl bg-green-500 text-white font-black text-xs active:scale-95 transition-all"
+                                                title="Fui al Gym"
+                                            >🏋️ Gym</button>
                                             <button
                                                 onClick={() => handleAbrirRutinaModal(rut)}
-                                                className="flex-1 py-2.5 rounded-2xl bg-orange-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md shadow-orange-200 dark:shadow-orange-900/30"
-                                            >
-                                                🏠 Rutina en Casa
-                                            </button>
+                                                className="px-3 py-1.5 rounded-xl bg-orange-500 text-white font-black text-xs active:scale-95 transition-all"
+                                                title="Rutina en Casa"
+                                            >🏠 Rutina</button>
                                         </div>
                                     </div>
                                 );
@@ -703,45 +703,42 @@ const Dashboard = () => {
                     <div className="space-y-6">
                         {/* Tarjeta Ejercicio Diario — día seleccionado en el calendario (Lunes a Sábado) */}
                         {sesionDiaSeleccionado && (
-                            <div className={`rounded-3xl border p-4 shadow-sm transition-all ${
-                                sesionDiaSeleccionado.estado === 'pendiente'
-                                    ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900/50'
-                                    : 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/50'
-                            }`}>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`p-2.5 rounded-2xl ${sesionDiaSeleccionado.estado === 'pendiente' ? 'bg-orange-100 dark:bg-orange-900/40' : 'bg-green-100 dark:bg-green-900/40'}`}>
-                                            <Dumbbell size={22} className={sesionDiaSeleccionado.estado === 'pendiente' ? 'text-orange-500' : 'text-green-500'} />
-                                        </div>
-                                        <div>
-                                            <p className="font-black text-gray-800 dark:text-gray-100 text-sm">💪 Ejercicio Diario</p>
-                                            <p className={`text-xs font-bold mt-0.5 ${sesionDiaSeleccionado.estado === 'pendiente' ? 'text-orange-500' : 'text-green-500'}`}>
-                                                {sesionDiaSeleccionado.estado === 'pendiente' && (selectDateStr === hoyStr ? '⏳ Pendiente hoy' : '⏳ Pendiente')}
-                                                {sesionDiaSeleccionado.estado === 'gym' && '🏋️ ¡Fuiste al gym! Completado'}
-                                                {sesionDiaSeleccionado.estado === 'rutina' && '🏠 ¡Rutina completa! Completado'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    {sesionDiaSeleccionado.estado !== 'pendiente' && (
-                                        <CheckCircle2 size={28} className="text-green-500" />
-                                    )}
+                            <div className={`bg-white dark:bg-gray-900 p-4 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 relative overflow-hidden flex gap-4 items-center transition-all`}>
+                                <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${sesionDiaSeleccionado.estado === 'pendiente' ? 'bg-orange-400' : 'bg-green-400'}`} />
+                                <button
+                                    onClick={() => sesionDiaSeleccionado.estado === 'pendiente' ? handleAbrirRutinaModal(sesionDiaSeleccionado) : null}
+                                    className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
+                                        sesionDiaSeleccionado.estado === 'pendiente'
+                                            ? 'bg-orange-50 dark:bg-orange-950/40 text-orange-500 hover:bg-orange-100 dark:hover:bg-orange-900/40'
+                                            : 'bg-green-50 dark:bg-green-950/40 text-green-500'
+                                    }`}
+                                >
+                                    {sesionDiaSeleccionado.estado !== 'pendiente' ? <CheckCircle2 size={22} /> : <Dumbbell size={22} />}
+                                </button>
+                                <div className="flex-1 min-w-0 py-1">
+                                    <p className={`font-bold leading-tight truncate text-sm ${sesionDiaSeleccionado.estado === 'pendiente' ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400'}`}>
+                                        💪 Ejercicio Diario
+                                    </p>
+                                    <p className="text-[11px] font-bold mt-0.5 text-gray-400 dark:text-gray-500">
+                                        {sesionDiaSeleccionado.estado === 'pendiente' && (selectDateStr === hoyStr ? '⏳ Pendiente hoy' : '⏳ Pendiente')}
+                                        {sesionDiaSeleccionado.estado === 'gym' && '🏋️ ¡Fuiste al gym!'}
+                                        {sesionDiaSeleccionado.estado === 'rutina' && '🏠 ¡Rutina completa!'}
+                                    </p>
                                 </div>
-                                {sesionDiaSeleccionado.estado === 'pendiente' && (
-                                    <div className="flex gap-2 mt-3">
+                                {sesionDiaSeleccionado.estado === 'pendiente' ? (
+                                    <div className="flex flex-col gap-1 shrink-0">
                                         <button
                                             onClick={() => handleMarcarGym(sesionDiaSeleccionado.id, sesionDiaSeleccionado.fecha_str)}
-                                            className="flex-1 py-2.5 rounded-2xl bg-green-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md shadow-green-200 dark:shadow-green-900/30"
-                                        >
-                                            🏋️ Fui al Gym
-                                        </button>
+                                            className="px-3 py-1.5 rounded-xl bg-green-500 text-white font-black text-xs active:scale-95 transition-all"
+                                            title="Fui al Gym"
+                                        >🏋️ Gym</button>
                                         <button
                                             onClick={() => handleAbrirRutinaModal(sesionDiaSeleccionado)}
-                                            className="flex-1 py-2.5 rounded-2xl bg-orange-500 text-white font-black text-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md shadow-orange-200 dark:shadow-orange-900/30"
-                                        >
-                                            🏠 Rutina en Casa
-                                        </button>
+                                            className="px-3 py-1.5 rounded-xl bg-orange-500 text-white font-black text-xs active:scale-95 transition-all"
+                                            title="Rutina en Casa"
+                                        >🏠 Rutina</button>
                                     </div>
-                                )}
+                                ) : null}
                             </div>
                         )}
                         {Object.entries(actividadesDelDiaPorGrupo).map(([key, grupo]) => (
